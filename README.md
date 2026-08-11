@@ -1,14 +1,14 @@
 # Rivora Contract Protocol (RCP)
 
-RCP (Rivora Contract Protocol) is a lightweight interface specification that defines how applications, frameworks, and servers communicate within the Rivora ecosystem.
+RCP (Rivora Contract Protocol) is a lightweight interface specification that defines how applications, frameworks, and servers communicate within the Rivora Ecosystem.
 
-RCP provides a contract between frameworks and servers while remaining independent of any specific implementation.
+RCP provides a common contract between frameworks and servers while remaining independent of any specific implementation.
 
 RCP 1.0 is designed for HTTP/3 and QUIC-based servers.
 
 ## Repository
 
-[GitHub Repository](https://github.com/code-1py/rcp)
+[GitHub Repository](https://github.com/RivoraEcosystem/rcp)
 
 ---
 
@@ -28,7 +28,7 @@ Application
 HTTP/3 / QUIC
 ```
 
-A typical request flow is:
+A typical request flow looks like:
 
 ```text
 Client
@@ -71,13 +71,13 @@ pip install rivora-rcp
 
 # Core Concepts
 
-RCP is built around three objects:
+RCP is built around three main components:
 
 * Scope
 * Receive
 * Send
 
-An application receives these objects from the server.
+An application receives these from the server.
 
 ```python
 async def app(scope, receive, send):
@@ -93,7 +93,7 @@ Applications must follow the RCP application contract.
 ```python
 RCPApplication = Callable[
     [Scope, RCPReceiveCallable, RCPSendCallable],
-    Awaitable[None]
+    Awaitable[None],
 ]
 ```
 
@@ -108,7 +108,7 @@ async def app(scope, receive, send):
 
 ### scope
 
-Contains metadata describing the connection.
+Contains information about the connection and request.
 
 ### receive
 
@@ -130,7 +130,7 @@ await send(event)
 
 # Scopes
 
-A scope contains information known when the connection is created.
+A scope contains information known when the connection or application context is created.
 
 ## HTTP Scope
 
@@ -160,23 +160,23 @@ class HTTPScope(TypedDict):
 
 ### Fields
 
-| Field        | Description                     |
-| ------------ | ------------------------------- |
-| type         | Scope type                      |
-| rcp          | RCP version information         |
-| http_version | HTTP protocol version           |
-| method       | Request method                  |
-| scheme       | Request scheme                  |
-| authority    | HTTP/3 `:authority` pseudo-header |
-| path         | Decoded request path            |
-| raw_path     | Original path bytes             |
-| query_string | Raw query string                |
-| root_path    | Mounted root path               |
-| headers      | Request headers                 |
-| client       | Client address and port         |
-| server       | Server address and port         |
-| state        | Shared request state            |
-| extensions   | Optional protocol capabilities  |
+| Field          | Description                       |
+| -------------- | --------------------------------- |
+| `type`         | Scope type                        |
+| `rcp`          | RCP version information           |
+| `http_version` | HTTP protocol version             |
+| `method`       | Request method                    |
+| `scheme`       | Request scheme                    |
+| `authority`    | HTTP/3 `:authority` pseudo-header |
+| `path`         | Decoded request path              |
+| `raw_path`     | Original path bytes               |
+| `query_string` | Raw query string                  |
+| `root_path`    | Mounted root path                 |
+| `headers`      | Request headers                   |
+| `client`       | Client address and port           |
+| `server`       | Server address and port           |
+| `state`        | Shared request state              |
+| `extensions`   | Optional protocol capabilities    |
 
 ---
 
@@ -191,7 +191,7 @@ class LifespanScope(TypedDict):
     extensions: NotRequired[dict[str, dict[object, object]]]
 ```
 
-Used during application startup and shutdown.
+The lifespan scope is used during application startup and shutdown.
 
 ---
 
@@ -205,17 +205,15 @@ Sent by the server to the application.
 {
     "type": HTTPConnectionEventType.REQUEST,
     "body": b"...",
-    "more_body": False
+    "more_body": False,
 }
 ```
 
-### Fields
-
-| Field     | Description                     |
-| --------- | ------------------------------- |
-| type      | Event type                      |
-| body      | Request body chunk              |
-| more_body | Additional body chunks expected |
+| Field       | Description                           |
+| ----------- | ------------------------------------- |
+| `type`      | Event type                            |
+| `body`      | Request body chunk                    |
+| `more_body` | Whether more body chunks are expected |
 
 ---
 
@@ -226,18 +224,16 @@ Sent by the application to the server.
 ```python
 {
     "type": HTTPResponseEventType.START,
-    "status": 200
+    "status": 200,
 }
 ```
 
-### Fields
-
-| Field    | Description                     |
-| -------- | ------------------------------- |
-| type     | Event type                      |
-| status   | HTTP response status            |
-| headers  | Response headers                |
-| trailers | Indicates trailers will be sent |
+| Field      | Description                             |
+| ---------- | --------------------------------------- |
+| `type`     | Event type                              |
+| `status`   | HTTP response status                    |
+| `headers`  | Response headers                        |
+| `trailers` | Indicates whether trailers will be sent |
 
 ---
 
@@ -247,17 +243,15 @@ Sent by the application to the server.
 {
     "type": HTTPResponseEventType.BODY,
     "body": b"Hello",
-    "more_body": False
+    "more_body": False,
 }
 ```
 
-### Fields
-
-| Field     | Description                |
-| --------- | -------------------------- |
-| type      | Event type                 |
-| body      | Response body chunk        |
-| more_body | Additional chunks expected |
+| Field       | Description                           |
+| ----------- | ------------------------------------- |
+| `type`      | Event type                            |
+| `body`      | Response body chunk                   |
+| `more_body` | Whether more body chunks are expected |
 
 ---
 
@@ -267,7 +261,7 @@ Sent by the application to the server.
 {
     "type": HTTPResponseEventType.TRAILERS,
     "headers": [...],
-    "more_trailers": False
+    "more_trailers": False,
 }
 ```
 
@@ -280,7 +274,7 @@ Used to send HTTP trailers after the response body.
 ```python
 {
     "type": HTTPResponseEventType.DEBUG,
-    "info": {}
+    "info": {},
 }
 ```
 
@@ -295,17 +289,16 @@ Servers may ignore this event.
 ```python
 {
     "type": HTTPConnectionEventType.DISCONNECT,
-    "reason": "Connection closed"
+    "reason": "Connection closed",
 }
 ```
+
 `reason` is optional and may be omitted.
 
-### Fields
-
-| Field     | Description                |
-| --------- | -------------------------- |
-| type      | Event type                 |
-| reason    | Optional disconnect reason |
+| Field    | Description                |
+| -------- | -------------------------- |
+| `type`   | Event type                 |
+| `reason` | Optional disconnect reason |
 
 ### Receive
 
@@ -329,7 +322,7 @@ Server:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP
+    "type": LifespanEventType.STARTUP,
 }
 ```
 
@@ -337,16 +330,16 @@ Application:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP_COMPLETE
+    "type": LifespanEventType.STARTUP_COMPLETE,
 }
 ```
 
-or
+or:
 
 ```python
 {
     "type": LifespanEventType.STARTUP_FAILED,
-    "message": "Reason"
+    "message": "Reason",
 }
 ```
 
@@ -358,7 +351,7 @@ Server:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN
+    "type": LifespanEventType.SHUTDOWN,
 }
 ```
 
@@ -366,16 +359,16 @@ Application:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN_COMPLETE
+    "type": LifespanEventType.SHUTDOWN_COMPLETE,
 }
 ```
 
-or
+or:
 
 ```python
 {
     "type": LifespanEventType.SHUTDOWN_FAILED,
-    "message": "Reason"
+    "message": "Reason",
 }
 ```
 
@@ -384,9 +377,8 @@ or
 # Example Application
 
 ```python
-from rcp import (
-    HTTPResponseEventType,
-)
+from rcp import HTTPResponseEventType
+
 
 async def app(scope, receive, send):
     await send(
@@ -410,7 +402,7 @@ async def app(scope, receive, send):
 
 ## RCP 1.0
 
-Supported:
+Currently designed to support:
 
 * HTTP/3
 * QUIC
@@ -418,12 +410,30 @@ Supported:
 * Typed events
 * Lifespan protocol
 
-Reserved for future versions:
+Future RCP versions are planned to add support for:
 
 * WebTransport
-* HTTP/2 support
-* HTTP/1.1 support
+* HTTP/2
+* HTTP/1.1
 * Additional protocol extensions
+
+---
+
+# Rivora Ecosystem
+
+RCP is one of the core projects of the [Rivora Ecosystem](https://github.com/RivoraEcosystem).
+
+The protocol is designed to allow different servers and frameworks to communicate without depending on each other's internal implementation.
+
+---
+
+# Development Status
+
+RCP 1.0 is stable and publicly available.
+
+Future versions of RCP are planned as the Rivora Ecosystem grows and additional protocol support and features are introduced.
+
+The current 1.0 specification is intended to provide a stable foundation for RCP-compatible servers and frameworks.
 
 ---
 
@@ -431,4 +441,4 @@ Reserved for future versions:
 
 RCP is licensed under the MIT License.
 
-See the LICENSE file for details.
+See the [LICENSE](https://github.com/RivoraEcosystem/rcp/blob/main/LICENSE) file for details.
