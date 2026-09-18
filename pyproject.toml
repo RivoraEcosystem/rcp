@@ -38,10 +38,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/code-1py/rcp"
-Repository = "https://github.com/code-1py/rcp"
-Issues = "https://github.com/code-1py/rcp/issues"
-Changelog = "https://github.com/code-1py/rcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/RivoraEcosystem/rcp"
+Repository = "https://github.com/RivoraEcosystem/rcp"
+Issues = "https://github.com/RivoraEcosystem/rcp/issues"
+Changelog = "https://github.com/RivoraEcosystem/rcp/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 include-package-data = true
