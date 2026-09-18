@@ -44,6 +44,12 @@ from .rcp import (
 )
 from .methods import RequestMethod
 from .scheme import HTTPScheme
+from .h3_headers import (
+    H3_EXTENSION_PSEUDO_HEADERS,
+    H3_REQUEST_PSEUDO_HEADERS,
+    H3_RESPONSE_PSEUDO_HEADERS,
+    H3_FORBIDDEN_HEADERS
+)
 
 __all__ = [
     "HTTPRequestEvent",
@@ -78,7 +84,11 @@ __all__ = [
     "LifespanReceiveEvents",
     "HTTPReceiveEvents",
     "LifespanSendEvents",
-    "HTTPSendEvents"
+    "HTTPSendEvents",
+    "H3_EXTENSION_PSEUDO_HEADERS",
+    "H3_REQUEST_PSEUDO_HEADERS",
+    "H3_RESPONSE_PSEUDO_HEADERS",
+    "H3_FORBIDDEN_HEADERS"
 ]
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"

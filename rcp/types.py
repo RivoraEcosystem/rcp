@@ -2,32 +2,32 @@ from enum import StrEnum
     
 # Scope types used when creating a new scope.
 class ScopeType(StrEnum):
-    HTTP = "HTTP"
-    LIFESPAN = "LIFESPAN"
+    HTTP = "http"
+    LIFESPAN = "lifespan"
     
     # Reserved for future RCP versions
-    WEBTRANSPORT = "WEBTRANSPORT"
+    WEBTRANSPORT = "webtransport"
 
 # HTTP events sent after the HTTP scope is created.
 class HTTPConnectionEventType(StrEnum):
-    REQUEST = "HTTP.REQUEST"
-    DISCONNECT = "HTTP.DISCONNECT"
+    REQUEST = "http.request"
+    DISCONNECT = "http.disconnect"
 
 # HTTP response event types.
 class HTTPResponseEventType(StrEnum):
-    START = "HTTP.RESPONSE.START"
-    BODY = "HTTP.RESPONSE.BODY"
-    TRAILERS = "HTTP.RESPONSE.TRAILERS"
-    DEBUG = "HTTP.RESPONSE.DEBUG"
+    START = "http.response.start"
+    BODY = "http.response.body"
+    TRAILERS = "http.response.trailers"
+    DEBUG = "http.response.debug"
 
 # Lifespan event types.
 class LifespanEventType(StrEnum):
-    STARTUP = "LIFESPAN.STARTUP"
-    SHUTDOWN = "LIFESPAN.SHUTDOWN"
-    STARTUP_COMPLETE = "LIFESPAN.STARTUP.COMPLETE"
-    STARTUP_FAILED = "LIFESPAN.STARTUP.FAILED"
-    SHUTDOWN_COMPLETE = "LIFESPAN.SHUTDOWN.COMPLETE"
-    SHUTDOWN_FAILED = "LIFESPAN.SHUTDOWN.FAILED"
+    STARTUP = "lifespan.startup"
+    SHUTDOWN = "lifespan.shutdown"
+    STARTUP_COMPLETE = "lifespan.startup.complete"
+    STARTUP_FAILED = "lifespan.startup.failed"
+    SHUTDOWN_COMPLETE = "lifespan.shutdown.complete"
+    SHUTDOWN_FAILED = "lifespan.shutdown.failed"
 
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):

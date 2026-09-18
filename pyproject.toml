@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=69.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "rivora-rcp"
-version = "1.0.3"
+version = "1.0.4"
 description = "Rivora Contract Protocol (RCP) interface specification."
 readme = "README.md"
 requires-python = ">=3.11"

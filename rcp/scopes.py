@@ -30,4 +30,3 @@ class LifespanScope(TypedDict):
     type: Literal[ScopeType.LIFESPAN]
     rcp: RCP
     state: NotRequired[dict[str, Any]]
-    extensions: NotRequired[dict[str, dict[object, object]]]
