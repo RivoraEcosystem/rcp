@@ -38,13 +38,13 @@ class WebTransportConnectionEventType(StrEnum):
 
 # Webtransport unidirectional stream events
 class WebTransportUnidirectionalStreamEventType(StrEnum):
-    CLIENT = "webtransport.uni.client" # client side unidirectional stream started
-    SERVER = "webtransport.uni.server" # create server side unidirectional stream
+    CLIENT = "webtransport.unidirectional.client" # client side unidirectional stream started
+    SERVER = "webtransport.unidirectional.server" # create server side unidirectional stream
 
 # Webtransport bidirectional stream events
 class WebTransportBidirectionalStreamEventType(StrEnum):
-    CLIENT = "webtransport.bidi.client" # client side bidirectional stream started
-    SERVER = "webtransport.bidi.server" # create server side bidirectional stream
+    CLIENT = "webtransport.bidirectional.client" # client side bidirectional stream started
+    SERVER = "webtransport.bidirectional.server" # create server side bidirectional stream
 
 # Webtransport Datagram events 
 class WebTransportDatagramEventType(StrEnum):
