@@ -46,6 +46,11 @@ class WebTransportBidirectionalStreamEventType(StrEnum):
     CLIENT = "webtransport.bidi.client" # client side bidirectional stream started
     SERVER = "webtransport.bidi.server" # create server side bidirectional stream
 
+# Webtransport Datagram events 
+class WebTransportDatagramEventType(StrEnum):
+    RECEIVE = "webtransport.datagram.receive"
+    SEND = "webtransport.datagram.send"
+
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):
     HTTP3 = "3"
