@@ -29,6 +29,14 @@ class LifespanEventType(StrEnum):
     SHUTDOWN_COMPLETE = "lifespan.shutdown.complete"
     SHUTDOWN_FAILED = "lifespan.shutdown.failed"
 
+# Webtransport Session Lifespan events
+class WebTransportConnectionEventType(StrEnum):
+    ACCEPT = "webtransport.accept"
+    REJECT = "webtransport.reject"
+    CLOSE = "webtransport.close"
+    DISCONNECT = "webtransport.disconnect"
+
+
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):
     HTTP3 = "3"
