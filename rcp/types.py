@@ -36,6 +36,10 @@ class WebTransportConnectionEventType(StrEnum):
     CLOSE = "webtransport.close"
     DISCONNECT = "webtransport.disconnect"
 
+# Webtransport unidirectional stream events
+class WebTransportUnidirectionalStreamEventType(StrEnum):
+    CLIENT = "webtransport.uni.client" # client side unidirectional stream started
+    SERVER = "webtransport.uni.server" # create server side unidirectional stream
 
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):
