@@ -30,14 +30,14 @@ class WebTransportSessionReject(TypedDict):
 
 
 class WebTransportSessionClose(TypedDict):
-    """Indicates that the local endpoint is closing the session."""
+    """Requests that the WebTransport session be closed."""
     type: Literal[WebTransportConnectionEventType.CLOSE]
     error_code: NotRequired[int]
     reason: NotRequired[str | None]
 
 
 class WebTransportSessionDisconnect(TypedDict):
-    """Indicates that the session has been disconnected."""
+    """Notifies the application that the client has disconnected."""
     type: Literal[WebTransportConnectionEventType.DISCONNECT]
     code: int
     reason: NotRequired[str | None]
