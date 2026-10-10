@@ -48,13 +48,13 @@ class WebTransportBidirectionalStreamEventType(StrEnum):
 
 # Webtransport Datagram events 
 class WebTransportDatagramEventType(StrEnum):
-    RECEIVE = "webtransport.datagram.receive"
+    RECEIVED = "webtransport.datagram.received"
     SEND = "webtransport.datagram.send"
 
 # Webtransport stream message event 
-class WebTransportMessageEventType(StrEnum):
-    RECEIVE = "webtransport.message.receive"
-    SEND = "webtransport.message.send"
+class WebTransportDataEventType(StrEnum):
+    RECEIVED = "webtransport.data.received"
+    SEND = "webtransport.data.send"
     
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):

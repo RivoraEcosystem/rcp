@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from .types import HTTPConnectionEventType, HTTPResponseEventType, LifespanEventType
+from .types import (
+    HTTPConnectionEventType,
+    HTTPResponseEventType,
+    LifespanEventType,
+    WebTransportConnectionEventType,
+    WebTransportUnidirectionalStreamEventType,
+    WebTransportBidirectionalStreamEventType,
+    WebTransportDatagramEventType,
+    WebTransportMessageEventType
+)
+
 from typing import NotRequired , Literal, TypedDict
 from collections.abc import Iterable
 
