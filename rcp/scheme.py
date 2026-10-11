@@ -1,5 +1,5 @@
 from enum import StrEnum
 
 class HTTPScheme(StrEnum):
-    HTTP = "http"
-    HTTPS = "https"
+    HTTP = b"http"
+    HTTPS = b"https"

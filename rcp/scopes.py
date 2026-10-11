@@ -30,3 +30,20 @@ class LifespanScope(TypedDict):
     type: Literal[ScopeType.LIFESPAN]
     rcp: RCP
     state: NotRequired[dict[str, Any]]
+
+class WebTransportScope(TypedDict):
+    type: Literal[ScopeType.WEBTRANSPORT]
+    rcp: RCP
+    http_version: Literal[HTTPVersions.HTTP3]
+    method: RequestMethod
+    scheme: HTTPScheme
+    authority: str | None
+    path: str
+    raw_path: bytes
+    query_string: bytes
+    root_path: str
+    headers: Headers
+    client: tuple[str, int] | None
+    server: tuple[str, int | None] | None
+    state: NotRequired[dict[str, Any]]
+    extensions: NotRequired[dict[str, dict[object, object]]]

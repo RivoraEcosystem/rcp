@@ -14,7 +14,8 @@ from .events import (
 )
 from .scopes import (
     HTTPScope,
-    LifespanScope
+    LifespanScope,
+    WebTransportScope
 )
 
 from .rcp_app import (

@@ -1,12 +1,12 @@
 from enum import StrEnum
 
 class RequestMethod(StrEnum):
-    GET = "GET"
-    POST = "POST"
-    PUT = "PUT"
-    PATCH = "PATCH"
-    DELETE = "DELETE"
-    HEAD = "HEAD"
-    OPTIONS = "OPTIONS"
-    TRACE = "TRACE"
-    CONNECT = "CONNECT"
+    GET = b"GET"
+    POST = b"POST"
+    PUT = b"PUT"
+    PATCH = b"PATCH"
+    DELETE = b"DELETE"
+    HEAD = b"HEAD"
+    OPTIONS = b"OPTIONS"
+    TRACE = b"TRACE"
+    CONNECT = b"CONNECT"

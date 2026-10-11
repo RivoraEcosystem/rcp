@@ -28,12 +28,13 @@ from .webtransport_event import (
 )
 from .scopes import (
     HTTPScope,
-    LifespanScope
+    LifespanScope,
+    WebTransportScope
 )
 from collections.abc import Callable, Awaitable
 from .stream_utils import Writer , Reader
 
-Scope = HTTPScope | LifespanScope
+Scope = HTTPScope | LifespanScope | WebTransportScope
 
 LifespanReceiveEvents = (
     LifespanStartupEvent
