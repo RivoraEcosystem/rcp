@@ -1,5 +1,56 @@
 # Changelog
 
+## 2.0.0
+
+RCP protocol version 2.0 adds WebTransport. This release is the first stable release of the package.
+
+### Added
+
+- Added RCP protocol version 2.0 (`RCPVersions.VERSION_2`). RCP 2.0 includes everything defined by RCP 1.0.
+- Added WebTransport support, which must only be used with RCP version 2.0.
+- Added `WebTransportScope` and the `ScopeType.WEBTRANSPORT` scope type. `WebTransportScope` is now part of the `Scope` union.
+- Added WebTransport event type enums:
+  - `WebTransportConnectionEventType`
+  - `WebTransportUnidirectionalStreamEventType`
+  - `WebTransportBidirectionalStreamEventType`
+  - `WebTransportDatagramEventType`
+  - `WebTransportDataEventType`
+- Added WebTransport session events:
+  - `WebTransportSessionAccept`
+  - `WebTransportSessionReject`
+  - `WebTransportSessionClose`
+  - `WebTransportSessionDisconnect`
+- Added WebTransport datagram events:
+  - `WebTransportDatagramReceived`
+  - `WebTransportDatagramSend`
+- Added WebTransport stream events:
+  - `WebTransportClientUnidirectionalStreamStarted`
+  - `WebTransportCreateServerUnidirectionalStream`
+  - `WebTransportClientBidirectionalStreamStarted`
+  - `WebTransportCreateServerBidirectionalStream`
+- Added WebTransport stream data events:
+  - `WebTransportDataReceived`
+  - `WebTransportDataSend`
+- Added `WebTransportStreamReadEvent` and `WebTransportStreamWriteEvent` type aliases.
+- Added the abstract `Reader` and `Writer` classes for WebTransport streams. Servers must implement them on top of their own stream handling.
+- Added the `is_closed` property on `Reader` and `Writer`. Servers must keep it accurate when a stream is closed, reset, or the client disconnects.
+- Added `WebtransportReceiveEvent` and `WebtransportSendEvent` type aliases.
+- Added `WEBTRANSPORT_EXTENSION` for non-RCP servers that support the RCP WebTransport implementation.
+- Added server-initiated stream rules: sending `webtransport.unidirectional.server` starts a unidirectional stream and returns its `Writer`, and sending `webtransport.bidirectional.server` starts a bidirectional stream and returns its `(Writer, Reader)`.
+- Added WebTransport session isolation requirements.
+- Added WebTransport server and application responsibilities.
+- Documented the full WebTransport protocol in the README, including examples.
+
+### Changed
+
+- `RCPReceiveEvent` and `RCPSendEvent` now include the WebTransport receive and send events.
+- `RCPSendCallable` may now return `tuple[Writer, Reader]` in addition to `None`, so that server-initiated streams can be returned to the application.
+- WebTransport is no longer reserved for a future protocol version. It is defined by RCP 2.0.
+- Clarified that `HTTP/3 :protocol` is processed as an Extended CONNECT field and selects the WebTransport scope in RCP 2.0.
+- Marked the package as `Development Status :: 5 - Production/Stable`.
+- Added the `webtransport` package keyword.
+- Updated package metadata and internal package version to `2.0.0`.
+
 ## 1.0.4
 
 ### Added
