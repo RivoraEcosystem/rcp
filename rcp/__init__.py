@@ -27,6 +27,10 @@ from .rcp_app import (
     HTTPSendEvents,
     LifespanReceiveEvents,
     HTTPReceiveEvents,
+    WebTransportStreamReadEvent,
+    WebTransportStreamWriteEvent,
+    WebtransportReceiveEvent,
+    WebtransportSendEvent,
     Scope
 )
 
@@ -35,7 +39,12 @@ from .types import (
     HTTPConnectionEventType,
     HTTPResponseEventType,
     LifespanEventType,
-    HTTPVersions
+    HTTPVersions,
+    WebTransportConnectionEventType,
+    WebTransportUnidirectionalStreamEventType,
+    WebTransportBidirectionalStreamEventType,
+    WebTransportDataEventType,
+    WebTransportDatagramEventType
 )
 
 from .rcp import (

@@ -4,11 +4,6 @@ from .types import (
     HTTPConnectionEventType,
     HTTPResponseEventType,
     LifespanEventType,
-    WebTransportConnectionEventType,
-    WebTransportUnidirectionalStreamEventType,
-    WebTransportBidirectionalStreamEventType,
-    WebTransportDatagramEventType,
-    WebTransportMessageEventType
 )
 
 from typing import NotRequired , Literal, TypedDict

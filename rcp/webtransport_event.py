@@ -9,7 +9,10 @@ from .types import (
 )
 
 from collections.abc import Iterable
-from typing import Literal, NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict , TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .stream_utils import Writer , Reader
 
 
 Headers = Iterable[tuple[bytes, bytes]]
@@ -42,21 +45,20 @@ class WebTransportSessionDisconnect(TypedDict):
     code: int
     reason: NotRequired[str | None]
 
-
 # WebTransport unidirectional stream events
 
 class WebTransportClientUnidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated unidirectional stream starts.
 
-    Provides a reader for receiving data from the client.
+    Provides a reader for receiving data in events from the client.
     """
     type: Literal[WebTransportUnidirectionalStreamEventType.CLIENT]
-    reader: None
+    reader: Reader
 
 
 class WebTransportCreateServerUnidirectionalStream(TypedDict):
     """Requests the creation of a server-initiated unidirectional
-    stream and provides a writer for sending data to the client
+    stream and provides a writer for sending data in events to the client
     without requiring a client request.
     """
     type: Literal[WebTransportUnidirectionalStreamEventType.SERVER]
@@ -67,17 +69,17 @@ class WebTransportCreateServerUnidirectionalStream(TypedDict):
 class WebTransportClientBidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated bidirectional stream starts.
 
-    Provides a reader and a writer for receiving and sending data.
+    Provides a reader and a writer for receiving and sending data in events.
     """
     type: Literal[WebTransportBidirectionalStreamEventType.CLIENT]
-    reader: None
-    writer: None
+    reader: Reader
+    writer: Writer
 
 
 class WebTransportCreateServerBidirectionalStream(TypedDict):
     """Requests the creation of a server-initiated bidirectional
     stream and provides a reader and a writer for receiving and
-    sending data.
+    sending data in events.
     """
     type: Literal[WebTransportBidirectionalStreamEventType.SERVER]
 
