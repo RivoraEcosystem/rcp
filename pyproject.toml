@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rivora-rcp"
-version = "1.0.4"
+version = "2.0.0"
 description = "Rivora Contract Protocol (RCP) interface specification."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,7 @@ keywords = [
     "riven",
     "http3",
     "quic",
-    "aioquic",
+    "webtransport",
     "framework",
     "server"
 ]
@@ -48,6 +48,8 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["rcp*"]
+namespaces = false
 exclude = [
     "venv*",
     ".venv*",
