@@ -119,3 +119,11 @@ class WebTransportDatagramSend(TypedDict):
     """
     type: Literal[WebTransportDatagramEventType.SEND]
     data: bytes
+
+WebTransportStreamReadEvent = (
+    WebTransportDataReceived
+)
+
+WebTransportStreamWriteEvent = (
+    WebTransportDataSend
+)

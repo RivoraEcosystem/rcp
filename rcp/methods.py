@@ -1,6 +1,6 @@
-from enum import StrEnum
+from enum import Enum
 
-class RequestMethod(StrEnum):
+class RequestMethod(Enum):
     GET = b"GET"
     POST = b"POST"
     PUT = b"PUT"

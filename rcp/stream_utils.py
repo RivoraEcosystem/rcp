@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .rcp_app import WebTransportStreamReadEvent , WebTransportStreamWriteEvent
+from .webtransport_event import WebTransportStreamReadEvent , WebTransportStreamWriteEvent
 
 class Writer(ABC):
     "Webtransport Stream Writer"
@@ -33,7 +31,7 @@ class Reader(ABC):
         return self._closed
  
     @abstractmethod
-    async def read(self,event:WebTransportStreamWriteEvent) -> WebTransportStreamReadEvent:
+    async def read(self,event:WebTransportStreamReadEvent) -> WebTransportStreamReadEvent:
         """read events from stream"""
         ...
  

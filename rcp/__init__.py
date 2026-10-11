@@ -28,11 +28,26 @@ from .rcp_app import (
     HTTPSendEvents,
     LifespanReceiveEvents,
     HTTPReceiveEvents,
-    WebTransportStreamReadEvent,
-    WebTransportStreamWriteEvent,
     WebtransportReceiveEvent,
     WebtransportSendEvent,
     Scope
+)
+
+from .webtransport_event import (
+    WebTransportClientBidirectionalStreamStarted,
+    WebTransportClientUnidirectionalStreamStarted,
+    WebTransportCreateServerBidirectionalStream,
+    WebTransportCreateServerUnidirectionalStream,
+    WebTransportDataReceived,
+    WebTransportDataSend,
+    WebTransportDatagramReceived,
+    WebTransportDatagramSend,
+    WebTransportStreamReadEvent,
+    WebTransportStreamWriteEvent,
+    WebTransportSessionClose,
+    WebTransportSessionReject,
+    WebTransportSessionAccept,
+    WebTransportSessionDisconnect
 )
 
 from .types import (
@@ -60,6 +75,9 @@ from .h3_headers import (
     H3_RESPONSE_PSEUDO_HEADERS,
     H3_FORBIDDEN_HEADERS
 )
+
+from .webtransport_extension import WEBTRANSPORT_EXTENSION
+from .stream_utils import Writer, Reader
 
 __all__ = [
     "HTTPRequestEvent",
@@ -98,7 +116,32 @@ __all__ = [
     "H3_EXTENSION_PSEUDO_HEADERS",
     "H3_REQUEST_PSEUDO_HEADERS",
     "H3_RESPONSE_PSEUDO_HEADERS",
-    "H3_FORBIDDEN_HEADERS"
+    "H3_FORBIDDEN_HEADERS",
+    "WEBTRANSPORT_EXTENSION",
+    "WebTransportConnectionEventType",
+    "WebTransportUnidirectionalStreamEventType",
+    "WebTransportBidirectionalStreamEventType",
+    "WebTransportDataEventType",
+    "WebTransportDatagramEventType",
+    "WebTransportScope",
+    "WebtransportReceiveEvent",
+    "WebtransportSendEvent",
+    "WebTransportStreamReadEvent",
+    "WebTransportStreamWriteEvent",
+    "Reader",
+    "Writer",
+    "WebTransportClientBidirectionalStreamStarted",
+    "WebTransportCreateServerBidirectionalStream",
+    "WebTransportDatagramReceived",
+    "WebTransportDatagramSend",
+    "WebTransportClientUnidirectionalStreamStarted",
+    "WebTransportCreateServerUnidirectionalStream",
+    "WebTransportDataReceived",
+    "WebTransportDataSend",
+    "WebTransportSessionClose",
+    "WebTransportSessionReject",
+    "WebTransportSessionAccept",
+    "WebTransportSessionDisconnect"
 ]
 
 __version__ = "1.0.4"

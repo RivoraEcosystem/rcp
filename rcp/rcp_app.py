@@ -23,8 +23,6 @@ from .webtransport_event import (
     WebTransportSessionClose,
     WebTransportSessionReject,
     WebTransportSessionAccept,
-    WebTransportDataReceived,
-    WebTransportDataSend
 )
 from .scopes import (
     HTTPScope,
@@ -75,14 +73,6 @@ WebtransportSendEvent = (
     |WebTransportSessionClose
     |WebTransportSessionReject
     |WebTransportSessionAccept
-)
-
-WebTransportStreamReadEvent = (
-    WebTransportDataReceived
-)
-
-WebTransportStreamWriteEvent = (
-    WebTransportDataSend
 )
 
 RCPReceiveEvent = (
