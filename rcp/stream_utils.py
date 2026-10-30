@@ -31,7 +31,7 @@ class Reader(ABC):
         return self._closed
  
     @abstractmethod
-    async def read(self,event:WebTransportStreamReadEvent) -> WebTransportStreamReadEvent:
+    async def read(self) -> WebTransportStreamReadEvent:
         """read events from stream"""
         ...
  

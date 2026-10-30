@@ -1070,9 +1070,7 @@ class Reader(ABC):
         return self._closed
 
     @abstractmethod
-    async def read(
-        self, event: WebTransportStreamReadEvent
-    ) -> WebTransportStreamReadEvent:
+    async def read(self) -> WebTransportStreamReadEvent:
         """read events from stream"""
 
     @abstractmethod
@@ -1083,7 +1081,7 @@ class Reader(ABC):
 | Member              | Description                                                                     |
 | ------------------- | ------------------------------------------------------------------------------- |
 | `is_closed`         | `True` once the reader can no longer deliver data.                              |
-| `read(event)`       | Reads from the stream and returns a `WebTransportDataReceived` event.           |
+| `read()`            | Reads from the stream and returns a `WebTransportDataReceived` event.           |
 | `close()`           | Stops and closes reading on the stream.                                         |
 
 Read events have the form:
@@ -1109,7 +1107,7 @@ Applications should check `is_closed` to find out whether a stream is still usab
 
 ```python
 while not reader.is_closed:
-    event = await reader.read(...)
+    event = await reader.read()
     ...
 ```
 
@@ -1325,7 +1323,7 @@ from rcp import (
 
 async def echo(reader, writer):
     while not reader.is_closed and not writer.is_closed:
-        event = await reader.read(...)
+        event = await reader.read()
         await writer.write(
             {
                 "type": WebTransportDataEventType.SEND,
