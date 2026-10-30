@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2
+
+### Changed
+
+- Updated `Reader.read()` to take no arguments and return the next `WebTransportDataReceived` event.
+- Extended `RCPSendCallable` to return a `Writer` for server-initiated unidirectional streams, while retaining `(Writer, Reader)` for bidirectional streams and `None` for other events.
+- Updated package metadata and the internal package version to `2.0.2`.
+
 ## 2.0.0
 
 RCP protocol version 2.0 adds WebTransport. This release is the first stable release of the package.

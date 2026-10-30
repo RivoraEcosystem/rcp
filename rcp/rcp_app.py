@@ -88,7 +88,7 @@ RCPSendEvent = (
 )
 
 RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
-RCPSendCallable = Callable[[RCPSendEvent], Awaitable[None|tuple[Writer,Reader]]]
+RCPSendCallable = Callable[[RCPSendEvent], Awaitable[None|Writer|tuple[Writer,Reader]]]
 
 RCPApplication = Callable[
     [Scope, RCPReceiveCallable, RCPSendCallable]

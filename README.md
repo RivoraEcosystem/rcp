@@ -158,9 +158,11 @@ RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
 
 RCPSendCallable = Callable[
     [RCPSendEvent],
-    Awaitable[None | tuple[Writer, Reader]],
+    Awaitable[None | Writer | tuple[Writer, Reader]],
 ]
 ```
+
+`send` returns `None` for events that do not create a server-initiated stream. It returns a `Writer` for a server-initiated unidirectional stream and a `(Writer, Reader)` tuple for a server-initiated bidirectional stream.
 
 A complete application is therefore an awaitable callable receiving:
 
@@ -1161,7 +1163,7 @@ Fires when the client starts a bidirectional stream. The server provides a **rea
 
 # Server-Initiated Streams
 
-The application can open streams toward the client at any time after the session is accepted, without any client request. It does this by sending a create-stream event. The server starts the stream and **returns the reader and writer as the result of `send`**.
+The application can open streams toward the client at any time after the session is accepted, without any client request. It does this by sending a create-stream event. The server starts the stream and returns its usable endpoint or endpoints from `send`: a `Writer` for a unidirectional stream, or a `(Writer, Reader)` tuple for a bidirectional stream.
 
 ## `WebTransportCreateServerUnidirectionalStream`
 
@@ -1741,7 +1743,7 @@ For example:
 
 ```text
 RCP protocol version: 1.0 / 2.0
-Python package release: 2.0.0
+Python package release: 2.0.2
 ```
 
 ---
