@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.4
+
+### Changed
+
+- Replaced the root README with a concise landing page and moved the full in-repository protocol reference to `docs/documentation.md`.
+- Updated package metadata and the internal package version to `2.0.4`.
+
 ## 2.0.3
 
 ### Added
