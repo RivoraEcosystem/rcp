@@ -58,3 +58,6 @@ exclude = [
     "dist*",
     "*.egg-info*"
 ]
+
+[tool.check-manifest]
+ignore = [".codespellrc", "CHANGELOG.md", "requirements/ci.txt"]

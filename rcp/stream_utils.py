@@ -1,17 +1,23 @@
 from abc import ABC, abstractmethod
-from .webtransport_event import WebTransportStreamReadEvent , WebTransportStreamWriteEvent
+
+from .webtransport_event import (
+    WebTransportStreamReadEvent,
+    WebTransportStreamWriteEvent,
+)
+
 
 class Writer(ABC):
     "Webtransport Stream Writer"
+
     def __init__(self):
-        self._closed:bool = False
+        self._closed: bool = False
 
     @property
     def is_closed(self) -> bool:
         return self._closed
 
     @abstractmethod
-    async def write(self,event:WebTransportStreamWriteEvent) -> None:
+    async def write(self, event: WebTransportStreamWriteEvent) -> None:
         """Write events to stream"""
         ...
 
@@ -23,20 +29,20 @@ class Writer(ABC):
 
 class Reader(ABC):
     "Webtransport Stream Reader"
+
     def __init__(self):
-        self._closed:bool = False
+        self._closed: bool = False
 
     @property
     def is_closed(self) -> bool:
         return self._closed
- 
+
     @abstractmethod
     async def read(self) -> WebTransportStreamReadEvent:
         """read events from stream"""
         ...
- 
+
     @abstractmethod
     async def close(self) -> None:
         """Stop and close writing on stream"""
         ...
-        

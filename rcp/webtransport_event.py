@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
+
 from .types import (
-    WebTransportConnectionEventType,
-    WebTransportUnidirectionalStreamEventType,
     WebTransportBidirectionalStreamEventType,
-    WebTransportDatagramEventType,
+    WebTransportConnectionEventType,
     WebTransportDataEventType,
+    WebTransportDatagramEventType,
+    WebTransportUnidirectionalStreamEventType,
 )
 
-from collections.abc import Iterable
-from typing import Literal, NotRequired, TypedDict , TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from .stream_utils import Writer , Reader
+    from .stream_utils import Reader, Writer
 
 
 Headers = Iterable[tuple[bytes, bytes]]
@@ -20,20 +20,24 @@ Headers = Iterable[tuple[bytes, bytes]]
 
 # WebTransport session events
 
+
 class WebTransportSessionAccept(TypedDict):
     """Indicates that the WebTransport session has been accepted."""
+
     type: Literal[WebTransportConnectionEventType.ACCEPT]
     headers: NotRequired[Headers]
 
 
 class WebTransportSessionReject(TypedDict):
     """Indicates that the WebTransport session has been rejected."""
+
     type: Literal[WebTransportConnectionEventType.REJECT]
     status: int
 
 
 class WebTransportSessionClose(TypedDict):
     """Requests that the WebTransport session be closed."""
+
     type: Literal[WebTransportConnectionEventType.CLOSE]
     error_code: NotRequired[int]
     reason: NotRequired[str | None]
@@ -41,17 +45,21 @@ class WebTransportSessionClose(TypedDict):
 
 class WebTransportSessionDisconnect(TypedDict):
     """Notifies the application that the client has disconnected."""
+
     type: Literal[WebTransportConnectionEventType.DISCONNECT]
     code: int
     reason: NotRequired[str | None]
 
+
 # WebTransport unidirectional stream events
+
 
 class WebTransportClientUnidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated unidirectional stream starts.
 
     Provides a reader for receiving data in events from the client.
     """
+
     type: Literal[WebTransportUnidirectionalStreamEventType.CLIENT]
     reader: Reader
 
@@ -61,16 +69,19 @@ class WebTransportCreateServerUnidirectionalStream(TypedDict):
     stream and provides a writer for sending data in events to the client
     without requiring a client request.
     """
+
     type: Literal[WebTransportUnidirectionalStreamEventType.SERVER]
 
 
 # WebTransport bidirectional stream events
+
 
 class WebTransportClientBidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated bidirectional stream starts.
 
     Provides a reader and a writer for receiving and sending data in events.
     """
+
     type: Literal[WebTransportBidirectionalStreamEventType.CLIENT]
     reader: Reader
     writer: Writer
@@ -81,16 +92,19 @@ class WebTransportCreateServerBidirectionalStream(TypedDict):
     stream and provides a reader and a writer for receiving and
     sending data in events.
     """
+
     type: Literal[WebTransportBidirectionalStreamEventType.SERVER]
 
 
 # WebTransport stream data events
+
 
 class WebTransportDataReceived(TypedDict):
     """Fires when data is received from the client on a stream.
 
     Must be emitted only by stream readers.
     """
+
     type: Literal[WebTransportDataEventType.RECEIVED]
     data: bytes
 
@@ -101,14 +115,17 @@ class WebTransportDataSend(TypedDict):
 
     Must be emitted only by stream writers.
     """
+
     type: Literal[WebTransportDataEventType.SEND]
     data: bytes
 
 
 # WebTransport datagram events
 
+
 class WebTransportDatagramReceived(TypedDict):
     """Fires when a datagram is received from the client."""
+
     type: Literal[WebTransportDatagramEventType.RECEIVED]
     data: bytes
 
@@ -117,13 +134,11 @@ class WebTransportDatagramSend(TypedDict):
     """Fires when the application requests that a datagram
     be sent to the client.
     """
+
     type: Literal[WebTransportDatagramEventType.SEND]
     data: bytes
 
-WebTransportStreamReadEvent = (
-    WebTransportDataReceived
-)
 
-WebTransportStreamWriteEvent = (
-    WebTransportDataSend
-)
+WebTransportStreamReadEvent = WebTransportDataReceived
+
+WebTransportStreamWriteEvent = WebTransportDataSend

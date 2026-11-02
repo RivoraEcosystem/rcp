@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from .types import ScopeType, HTTPVersions
-from .methods import RequestMethod
-from typing import NotRequired ,Any, Literal, TypedDict
 from collections.abc import Iterable
+from typing import Any, Literal, NotRequired, TypedDict
+
+from .methods import RequestMethod
 from .rcp import RCP
 from .scheme import HTTPScheme
+from .types import HTTPVersions, ScopeType
 
 Headers = Iterable[tuple[bytes, bytes]]
+
 
 class HTTPScope(TypedDict):
     type: Literal[ScopeType.HTTP]
@@ -26,10 +28,12 @@ class HTTPScope(TypedDict):
     state: NotRequired[dict[str, Any]]
     extensions: NotRequired[dict[str, dict[object, object]]]
 
+
 class LifespanScope(TypedDict):
     type: Literal[ScopeType.LIFESPAN]
     rcp: RCP
     state: NotRequired[dict[str, Any]]
+
 
 class WebTransportScope(TypedDict):
     type: Literal[ScopeType.WEBTRANSPORT]

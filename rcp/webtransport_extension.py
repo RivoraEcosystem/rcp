@@ -1,9 +1,9 @@
 from .types import (
-    WebTransportDatagramEventType,
-    WebTransportDataEventType,
-    WebTransportUnidirectionalStreamEventType,
     WebTransportBidirectionalStreamEventType,
-    WebTransportConnectionEventType
+    WebTransportConnectionEventType,
+    WebTransportDataEventType,
+    WebTransportDatagramEventType,
+    WebTransportUnidirectionalStreamEventType,
 )
 
 WEBTRANSPORT_EXTENSION = {

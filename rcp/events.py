@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import Literal, NotRequired, TypedDict
+
 from .types import (
     HTTPConnectionEventType,
     HTTPResponseEventType,
     LifespanEventType,
 )
 
-from typing import NotRequired , Literal, TypedDict
-from collections.abc import Iterable
-
 Headers = Iterable[tuple[bytes, bytes]]
+
 
 # HTTP events
 class HTTPRequestEvent(TypedDict):
@@ -17,9 +18,11 @@ class HTTPRequestEvent(TypedDict):
     body: bytes
     more_body: bool
 
+
 class HTTPResponseDebugEvent(TypedDict):
     type: Literal[HTTPResponseEventType.DEBUG]
     info: dict[str, object]
+
 
 class HTTPResponseStartEvent(TypedDict):
     type: Literal[HTTPResponseEventType.START]

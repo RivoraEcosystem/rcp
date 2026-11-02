@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class RequestMethod(Enum):
     GET = b"GET"
     POST = b"POST"

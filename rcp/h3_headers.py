@@ -3,7 +3,7 @@ H3_FORBIDDEN_HEADERS = {
     b"keep-alive",
     b"proxy-connection",
     b"transfer-encoding",
-    b"upgrade"
+    b"upgrade",
 }
 
 H3_REQUEST_PSEUDO_HEADERS = {
@@ -13,10 +13,6 @@ H3_REQUEST_PSEUDO_HEADERS = {
     b":authority",
 }
 
-H3_RESPONSE_PSEUDO_HEADERS = {
-    b":status"
-}
+H3_RESPONSE_PSEUDO_HEADERS = {b":status"}
 
-H3_EXTENSION_PSEUDO_HEADERS = {
-    b":protocol"
-}
+H3_EXTENSION_PSEUDO_HEADERS = {b":protocol"}

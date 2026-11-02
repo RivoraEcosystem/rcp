@@ -1,43 +1,37 @@
+from collections.abc import Awaitable, Callable
+
 from .events import (
+    HTTPDisconnectEvent,
     HTTPRequestEvent,
+    HTTPResponseBodyEvent,
     HTTPResponseDebugEvent,
     HTTPResponseStartEvent,
-    HTTPResponseBodyEvent,
     HTTPResponseTrailersEvent,
-    HTTPDisconnectEvent,
-    LifespanStartupEvent,
-    LifespanShutdownEvent,
-    LifespanStartupCompleteEvent,
-    LifespanStartupFailedEvent,
     LifespanShutdownCompleteEvent,
-    LifespanShutdownFailedEvent
+    LifespanShutdownEvent,
+    LifespanShutdownFailedEvent,
+    LifespanStartupCompleteEvent,
+    LifespanStartupEvent,
+    LifespanStartupFailedEvent,
 )
+from .scopes import HTTPScope, LifespanScope, WebTransportScope
+from .stream_utils import Reader, Writer
 from .webtransport_event import (
-    WebTransportDatagramReceived,
     WebTransportClientBidirectionalStreamStarted,
     WebTransportClientUnidirectionalStreamStarted,
-    WebTransportSessionDisconnect,
-    WebTransportDatagramSend,
     WebTransportCreateServerBidirectionalStream,
     WebTransportCreateServerUnidirectionalStream,
-    WebTransportSessionClose,
-    WebTransportSessionReject,
+    WebTransportDatagramReceived,
+    WebTransportDatagramSend,
     WebTransportSessionAccept,
+    WebTransportSessionClose,
+    WebTransportSessionDisconnect,
+    WebTransportSessionReject,
 )
-from .scopes import (
-    HTTPScope,
-    LifespanScope,
-    WebTransportScope
-)
-from collections.abc import Callable, Awaitable
-from .stream_utils import Writer , Reader
 
 Scope = HTTPScope | LifespanScope | WebTransportScope
 
-LifespanReceiveEvents = (
-    LifespanStartupEvent
-    | LifespanShutdownEvent
-)
+LifespanReceiveEvents = LifespanStartupEvent | LifespanShutdownEvent
 
 LifespanSendEvents = (
     LifespanStartupCompleteEvent
@@ -46,10 +40,7 @@ LifespanSendEvents = (
     | LifespanShutdownFailedEvent
 )
 
-HTTPReceiveEvents = (
-    HTTPRequestEvent
-    | HTTPDisconnectEvent
-)
+HTTPReceiveEvents = HTTPRequestEvent | HTTPDisconnectEvent
 
 HTTPSendEvents = (
     HTTPResponseStartEvent
@@ -61,36 +52,27 @@ HTTPSendEvents = (
 
 WebtransportReceiveEvent = (
     WebTransportDatagramReceived
-    |WebTransportClientBidirectionalStreamStarted
-    |WebTransportClientUnidirectionalStreamStarted
-    |WebTransportSessionDisconnect
+    | WebTransportClientBidirectionalStreamStarted
+    | WebTransportClientUnidirectionalStreamStarted
+    | WebTransportSessionDisconnect
 )
 
 WebtransportSendEvent = (
     WebTransportDatagramSend
-    |WebTransportCreateServerBidirectionalStream
-    |WebTransportCreateServerUnidirectionalStream
-    |WebTransportSessionClose
-    |WebTransportSessionReject
-    |WebTransportSessionAccept
+    | WebTransportCreateServerBidirectionalStream
+    | WebTransportCreateServerUnidirectionalStream
+    | WebTransportSessionClose
+    | WebTransportSessionReject
+    | WebTransportSessionAccept
 )
 
-RCPReceiveEvent = (
-    HTTPReceiveEvents
-    |LifespanReceiveEvents
-    |WebtransportReceiveEvent
-)
+RCPReceiveEvent = HTTPReceiveEvents | LifespanReceiveEvents | WebtransportReceiveEvent
 
-RCPSendEvent = (
-    HTTPSendEvents
-    |LifespanSendEvents
-    |WebtransportSendEvent
-)
+RCPSendEvent = HTTPSendEvents | LifespanSendEvents | WebtransportSendEvent
 
 RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
-RCPSendCallable = Callable[[RCPSendEvent], Awaitable[None|Writer|tuple[Writer,Reader]]]
-
-RCPApplication = Callable[
-    [Scope, RCPReceiveCallable, RCPSendCallable]
-    , Awaitable[None]
+RCPSendCallable = Callable[
+    [RCPSendEvent], Awaitable[None | Writer | tuple[Writer, Reader]]
 ]
+
+RCPApplication = Callable[[Scope, RCPReceiveCallable, RCPSendCallable], Awaitable[None]]
