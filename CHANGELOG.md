@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.3
+
+### Added
+
+- Added tag-triggered PyPI publishing with quality, package metadata, and artifact-content checks.
+
+### Changed
+
+- Clarified that WebTransport stream exceptions should be handled at the stream boundary to avoid failing the session application task.
+- Updated package metadata and the internal package version to `2.0.3`.
+
 ## 2.0.2
 
 ### Changed
