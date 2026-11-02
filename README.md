@@ -1745,7 +1745,7 @@ For example:
 
 ```text
 RCP protocol version: 1.0 / 2.0
-Python package release: 2.0.2
+Python package release: 2.0.3
 ```
 
 ---
