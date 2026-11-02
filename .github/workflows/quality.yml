@@ -28,7 +28,7 @@ jobs:
       - name: Ruff format check
         run: ruff format --check rcp .github/scripts
       - name: Codespell
-        run: codespell rcp README.md CHANGELOG.md pyproject.toml MANIFEST.in .codespellrc requirements/ci.txt .github/workflows/quality.yml .github/release-files.json .github/scripts/check_release_contents.py
+        run: codespell rcp README.md docs/documentation.md CHANGELOG.md pyproject.toml MANIFEST.in .codespellrc requirements/ci.txt .github/workflows/quality.yml .github/release-files.json .github/scripts/check_release_contents.py
       - name: Pylint import and circular import checks
         run: pylint --disable=all --enable=E0401,E0402,E0611,R0401 --ignored-modules=uvloop,winloop rcp
       - name: Check source distribution manifest

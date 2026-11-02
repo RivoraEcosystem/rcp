@@ -132,4 +132,4 @@ __all__ = [
     "Writer",
 ]
 
-__version__ = "2.0.3"
+__version__ = "2.0.4"

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rivora-rcp"
-version = "2.0.3"
+version = "2.0.4"
 description = "Rivora Contract Protocol (RCP) interface specification."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -60,4 +60,4 @@ exclude = [
 ]
 
 [tool.check-manifest]
-ignore = [".codespellrc", "CHANGELOG.md", "requirements/ci.txt"]
+ignore = [".codespellrc", "CHANGELOG.md", "docs/documentation.md", "requirements/ci.txt"]
