@@ -1115,6 +1115,8 @@ while not reader.is_closed:
 
 Writing to or reading from a closed stream is an error and the server should raise an appropriate exception.
 
+WebTransport streams are handled within the application task started for the session. Applications should catch exceptions raised by `Reader` and `Writer` operations, as well as by stream handlers, at the stream boundary. Otherwise, an unhandled exception may propagate to the session application task, causing the server to potentially treat the stream error as a session-level error, cancel the task, and close the WebTransport session.
+
 ## Event direction rules
 
 * `WebTransportDataReceived` is emitted **only by stream readers**.
