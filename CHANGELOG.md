@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.5
+
+### Changed
+
+- Added the documentation site URL to package metadata so it appears on PyPI.
+- Updated CI to build and inspect distributions on pull requests and pushes, validate package contents, and publish only on version tag pushes.
+- Updated package metadata and the internal package version to `2.0.5`.
+
 ## 2.0.4
 
 ### Changed
