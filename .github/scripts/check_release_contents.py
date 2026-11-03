@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import stat
 import sys
 import tarfile
@@ -17,18 +18,28 @@ ALLOWLIST = ROOT / ".github" / "release-files.json"
 def report_difference(label: str, expected: set[str], actual: set[str]) -> bool:
     extra = sorted(actual - expected)
     missing = sorted(expected - actual)
-    if not extra and not missing:
-        return True
-
-    if extra:
-        print(f"Unexpected {label}: {', '.join(extra)}", file=sys.stderr)
-    if missing:
-        print(f"Missing {label}: {', '.join(missing)}", file=sys.stderr)
-    return False
+    kind = "directories" if label.lower().endswith("directories") else "files"
+    print(f"{label}: Missing {kind}: {len(missing)}; Extra {kind}: {len(extra)}")
+    for path in missing:
+        print(f"  Missing: {path}", file=sys.stderr)
+    for path in extra:
+        print(f"  Extra: {path}", file=sys.stderr)
+    return not missing and not extra
 
 
 def expected_paths(templates: list[str], **values: str) -> set[str]:
     return {item.format(**values) for item in templates}
+
+
+def expected_directories(paths: set[str], prefix: str = "") -> set[str]:
+    directories: set[str] = set()
+    for filename in paths:
+        parent = PurePosixPath(filename).parent
+        while parent != PurePosixPath("."):
+            path = parent.as_posix()
+            directories.add(f"{prefix}{path}")
+            parent = parent.parent
+    return directories
 
 
 def check_wheel(wheel_path: Path, allowed: set[str]) -> bool:
@@ -48,7 +59,13 @@ def check_wheel(wheel_path: Path, allowed: set[str]) -> bool:
         if entry.is_dir() or stat.S_ISLNK(mode):
             print(f"Unsupported wheel member: {entry.filename}", file=sys.stderr)
             return False
-    return report_difference("wheel files", allowed, set(names))
+    actual_files = set(names)
+    actual_directories = expected_directories(actual_files)
+    files_ok = report_difference("Wheel files", allowed, actual_files)
+    directories_ok = report_difference(
+        "Wheel directories", expected_directories(allowed), actual_directories
+    )
+    return files_ok and directories_ok
 
 
 def check_sdist(sdist_path: Path, allowed: set[str], root_name: str) -> bool:
@@ -87,16 +104,12 @@ def check_sdist(sdist_path: Path, allowed: set[str], root_name: str) -> bool:
         print("Source distribution contains duplicate paths", file=sys.stderr)
         return False
 
-    expected_directories = {root_name}
-    for filename in allowed:
-        parent = PurePosixPath(filename).parent
-        while parent != PurePosixPath("."):
-            expected_directories.add(f"{root_name}/{parent.as_posix()}")
-            parent = parent.parent
-
-    files_ok = report_difference("source distribution files", allowed, files)
+    allowed_directories = {root_name} | expected_directories(
+        allowed, prefix=f"{root_name}/"
+    )
+    files_ok = report_difference("Source distribution files", allowed, files)
     directories_ok = report_difference(
-        "source distribution directories", expected_directories, directories
+        "Source distribution directories", allowed_directories, directories
     )
     return files_ok and directories_ok
 
@@ -107,17 +120,19 @@ def main() -> int:
     args = parser.parse_args()
 
     with (ROOT / "pyproject.toml").open("rb") as project_file:
-        version = tomllib.load(project_file)["project"]["version"]
+        project = tomllib.load(project_file)["project"]
+    version = project["version"]
+    normalized_name = re.sub(r"[-_.]+", "_", project["name"]).lower()
     expected_tag = f"v{version}"
     release_tag = os.environ.get("RELEASE_TAG")
-    if release_tag != expected_tag:
+    if release_tag and release_tag != expected_tag:
         print(
-            f"Release tag {release_tag!r} does not match package version tag {expected_tag!r}",
+            f"Release tag {release_tag!r} does not match package version tag "
+            f"{expected_tag!r}",
             file=sys.stderr,
         )
         return 1
 
-    normalized_name = "rivora_rcp"
     wheel_name = f"{normalized_name}-{version}-py3-none-any.whl"
     sdist_name = f"{normalized_name}-{version}.tar.gz"
     try:
