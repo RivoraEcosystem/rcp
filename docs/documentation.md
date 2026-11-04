@@ -726,6 +726,8 @@ When handling this event from an application, the server should terminate the as
 
 # WebTransport
 
+> **Development status:** RCP is currently in Alpha and is not considered stable while WebTransport is under development. HTTP/3 events are stable; WebTransport events may change during development.
+
 WebTransport support is defined by **RCP version 2.0** and must only be used with RCP version 2.0.
 
 ```python

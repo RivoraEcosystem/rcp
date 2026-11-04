@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.6
+
+### Changed
+
+- Clarified that RCP is not considered stable while WebTransport is under development. HTTP/3 events are stable, but WebTransport events may change during development.
+
 ## 2.0.5
 
 ### Changed
