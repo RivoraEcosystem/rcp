@@ -2,6 +2,7 @@ from typing import Literal, TypedDict
 
 from ..types import LifespanEventType
 
+
 class LifespanStartupEvent(TypedDict):
     type: Literal[LifespanEventType.STARTUP]
 

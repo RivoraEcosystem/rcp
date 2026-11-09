@@ -7,7 +7,7 @@ from .http.events import (
     HTTPResponseDebugEvent,
     HTTPResponseStartEvent,
     HTTPResponseTrailersEvent,
-)    
+)
 from .lifespan.events import (
     LifespanShutdownCompleteEvent,
     LifespanShutdownEvent,
@@ -16,9 +16,7 @@ from .lifespan.events import (
     LifespanStartupEvent,
     LifespanStartupFailedEvent,
 )
-
 from .scopes import HTTPScope, LifespanScope, WebTransportScope
-from .webtransport.webtransport_stream_utils import Reader, Writer
 from .webtransport.webtransport_event import (
     WebTransportClientBidirectionalStreamStarted,
     WebTransportClientUnidirectionalStreamStarted,
@@ -31,6 +29,7 @@ from .webtransport.webtransport_event import (
     WebTransportSessionDisconnect,
     WebTransportSessionReject,
 )
+from .webtransport.webtransport_stream_utils import Reader, Writer
 
 Scope = HTTPScope | LifespanScope | WebTransportScope
 

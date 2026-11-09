@@ -5,6 +5,9 @@
 ### Changed
 
 - Clarified that RCP is not considered stable while WebTransport is under development. HTTP/3 events are stable, but WebTransport events may change during development.
+- Clarified WebTransport session error-code handling, error-code mapping, and behavior when an application uses an unsupported feature.
+- Simplified `WEBTRANSPORT_EXTENSION` to advertise supported WebTransport features.
+- Updated package metadata and the internal package version to `2.0.6`.
 
 ## 2.0.5
 
