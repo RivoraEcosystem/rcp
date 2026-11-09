@@ -15,6 +15,23 @@ ROOT = Path(__file__).resolve().parents[2]
 ALLOWLIST = ROOT / ".github" / "release-files.json"
 
 
+def report_result(matches: bool) -> int:
+    message = (
+        "Release artifact contents match .github/release-files.json"
+        if matches
+        else "Release artifact contents mismatch .github/release-files.json"
+    )
+    if (
+        sys.stdout.isatty()
+        and "NO_COLOR" not in os.environ
+        and os.environ.get("TERM") != "dumb"
+    ):
+        color = "\033[32m" if matches else "\033[31m"
+        message = f"{color}{message}\033[0m"
+    print(message, flush=True)
+    return 0 if matches else 1
+
+
 def report_difference(label: str, expected: set[str], actual: set[str]) -> bool:
     extra = sorted(actual - expected)
     missing = sorted(expected - actual)
@@ -119,8 +136,12 @@ def main() -> int:
     parser.add_argument("--dist-dir", type=Path, default=Path("dist"))
     args = parser.parse_args()
 
-    with (ROOT / "pyproject.toml").open("rb") as project_file:
-        project = tomllib.load(project_file)["project"]
+    try:
+        with (ROOT / "pyproject.toml").open("rb") as project_file:
+            project = tomllib.load(project_file)["project"]
+    except (OSError, tomllib.TOMLDecodeError, KeyError) as exc:
+        print(f"Cannot read project metadata: {exc}", file=sys.stderr)
+        return report_result(False)
     version = project["version"]
     normalized_name = re.sub(r"[-_.]+", "_", project["name"]).lower()
     expected_tag = f"v{version}"
@@ -131,7 +152,7 @@ def main() -> int:
             f"{expected_tag!r}",
             file=sys.stderr,
         )
-        return 1
+        return report_result(False)
 
     wheel_name = f"{normalized_name}-{version}-py3-none-any.whl"
     sdist_name = f"{normalized_name}-{version}.tar.gz"
@@ -142,7 +163,7 @@ def main() -> int:
             f"Cannot read distribution directory {args.dist_dir}: {exc}",
             file=sys.stderr,
         )
-        return 1
+        return report_result(False)
 
     expected_artifacts = {wheel_name, sdist_name}
     dist_files = {path.name for path in entries}
@@ -153,24 +174,27 @@ def main() -> int:
             print(
                 "Distribution directory may contain only regular files", file=sys.stderr
             )
-        return 1
+        return report_result(False)
 
-    allowlist = json.loads(ALLOWLIST.read_text(encoding="utf-8"))
-    dist_info = f"{normalized_name}-{version}.dist-info"
-    egg_info = f"{normalized_name}.egg-info"
-    wheel_allowed = expected_paths(allowlist["wheel"], dist_info=dist_info)
-    sdist_allowed = expected_paths(
-        allowlist["sdist"], version=version, egg_info=egg_info
-    )
+    try:
+        allowlist = json.loads(ALLOWLIST.read_text(encoding="utf-8"))
+        dist_info = f"{normalized_name}-{version}.dist-info"
+        egg_info = f"{normalized_name}.egg-info"
+        wheel_allowed = expected_paths(allowlist["wheel"], dist_info=dist_info)
+        sdist_allowed = expected_paths(
+            allowlist["sdist"], version=version, egg_info=egg_info
+        )
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        print(f"Cannot read release file allowlist: {exc}", file=sys.stderr)
+        return report_result(False)
 
     wheel_ok = check_wheel(args.dist_dir / wheel_name, wheel_allowed)
     sdist_ok = check_sdist(
         args.dist_dir / sdist_name, sdist_allowed, f"{normalized_name}-{version}"
     )
     if wheel_ok and sdist_ok:
-        print("Release artifact contents match .github/release-files.json")
-        return 0
-    return 1
+        return report_result(True)
+    return report_result(False)
 
 
 if __name__ == "__main__":
