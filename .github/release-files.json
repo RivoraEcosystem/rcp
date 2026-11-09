@@ -2,7 +2,10 @@
   "wheel": [
     "rcp/__init__.py",
     "rcp/events.py",
-    "rcp/h3_headers.py",
+    "rcp/http3/__init__.py",
+    "rcp/http3/h3_headers.py",
+    "rcp/lifespan/__init__.py",
+    "rcp/lifespan/events.py",
     "rcp/methods.py",
     "rcp/rcp.py",
     "rcp/rcp_app.py",

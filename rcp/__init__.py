@@ -1,10 +1,12 @@
-from .events import (
+from .http.events import (
     HTTPDisconnectEvent,
     HTTPRequestEvent,
     HTTPResponseBodyEvent,
     HTTPResponseDebugEvent,
     HTTPResponseStartEvent,
     HTTPResponseTrailersEvent,
+)    
+from .lifespan.events import (
     LifespanShutdownCompleteEvent,
     LifespanShutdownEvent,
     LifespanShutdownFailedEvent,
@@ -12,7 +14,8 @@ from .events import (
     LifespanStartupEvent,
     LifespanStartupFailedEvent,
 )
-from .h3_headers import (
+
+from .http3.h3_headers import (
     H3_EXTENSION_PSEUDO_HEADERS,
     H3_FORBIDDEN_HEADERS,
     H3_REQUEST_PSEUDO_HEADERS,
@@ -36,7 +39,7 @@ from .rcp_app import (
 )
 from .scheme import HTTPScheme
 from .scopes import HTTPScope, LifespanScope, WebTransportScope
-from .stream_utils import Reader, Writer
+from .webtransport.webtransport_stream_utils import Reader, Writer
 from .types import (
     HTTPConnectionEventType,
     HTTPResponseEventType,
@@ -49,7 +52,7 @@ from .types import (
     WebTransportDatagramEventType,
     WebTransportUnidirectionalStreamEventType,
 )
-from .webtransport_event import (
+from .webtransport.webtransport_event import (
     WebTransportClientBidirectionalStreamStarted,
     WebTransportClientUnidirectionalStreamStarted,
     WebTransportCreateServerBidirectionalStream,
@@ -65,7 +68,7 @@ from .webtransport_event import (
     WebTransportStreamReadEvent,
     WebTransportStreamWriteEvent,
 )
-from .webtransport_extension import WEBTRANSPORT_EXTENSION
+from .webtransport.webtransport_extension import WEBTRANSPORT_EXTENSION
 
 __all__ = [
     "H3_EXTENSION_PSEUDO_HEADERS",

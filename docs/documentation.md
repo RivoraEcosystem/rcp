@@ -932,6 +932,8 @@ Sent by the application to request that the session be closed.
 
 When the server handles this event it closes the session and all of its streams. Every stream reader and writer belonging to the session must be marked closed.
 
+**Note:** A server must treat the `error_code` in `webtransport.close` as the session's error code. It must not interpret it as a stream close or reset code and must pass it as the application error code when closing the session.
+
 ## `WebTransportSessionDisconnect`
 
 Sent by the server to notify the application that the client has disconnected.
@@ -1359,6 +1361,12 @@ async def app(scope, receive, send):
         elif event["type"] == WebTransportConnectionEventType.DISCONNECT:
             return
 ```
+
+---
+
+# WebTransport Error Codes
+
+The current WebTransport draft does not define an error-code mapping. Servers must provide their own mapping.
 
 ---
 
