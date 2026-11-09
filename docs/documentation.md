@@ -726,6 +726,8 @@ When handling this event from an application, the server should terminate the as
 
 # WebTransport
 
+> **Development status:** RCP is currently in Alpha and is not considered stable while WebTransport is under development. HTTP/3 events are stable; WebTransport events may change during development.
+
 WebTransport support is defined by **RCP version 2.0** and must only be used with RCP version 2.0.
 
 ```python
@@ -929,6 +931,8 @@ Sent by the application to request that the session be closed.
 | `reason`     | Optional human-readable close reason.      |
 
 When the server handles this event it closes the session and all of its streams. Every stream reader and writer belonging to the session must be marked closed.
+
+**Note:** A server must treat the `error_code` in `webtransport.close` as the session's error code. It must not interpret it as a stream close or reset code and must pass it as the application error code when closing the session.
 
 ## `WebTransportSessionDisconnect`
 
@@ -1217,24 +1221,6 @@ WEBTRANSPORT_EXTENSION = {
             "unidirectional_streams": True,
             "bidirectional_streams": True,
         },
-        "send_event_type": {
-            WebTransportDatagramEventType.SEND: True,
-            WebTransportBidirectionalStreamEventType.SERVER: True,
-            WebTransportUnidirectionalStreamEventType.SERVER: True,
-            WebTransportConnectionEventType.CLOSE: True,
-            WebTransportConnectionEventType.REJECT: True,
-            WebTransportConnectionEventType.ACCEPT: True,
-        },
-        "receive_event_type": {
-            WebTransportDatagramEventType.RECEIVED: True,
-            WebTransportBidirectionalStreamEventType.CLIENT: True,
-            WebTransportUnidirectionalStreamEventType.CLIENT: True,
-            WebTransportConnectionEventType.DISCONNECT: True,
-        },
-        "stream_event": {
-            WebTransportDataEventType.RECEIVED: True,
-            WebTransportDataEventType.SEND: True,
-        },
     }
 }
 ```
@@ -1252,12 +1238,9 @@ scope["extensions"] = {
 
 ## Fields
 
-| Key                  | Description                                                                        |
-| -------------------- | ---------------------------------------------------------------------------------- |
-| `features`           | Supported WebTransport features: datagrams, unidirectional and bidirectional streams. |
-| `send_event_type`    | Event types the application may send through `send`.                               |
-| `receive_event_type` | Event types the application may receive through `receive`.                         |
-| `stream_event`       | Event types exchanged through stream readers (`data.received`) and writers (`data.send`). |
+| Key        | Description                                                                          |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `features` | Supported WebTransport features: datagrams, unidirectional and bidirectional streams. |
 
 ## Checking for support
 
@@ -1270,7 +1253,11 @@ if extension and extension["features"]["datagrams"]:
     ...
 ```
 
-A server must only set a feature or event type to `True` when it actually supports it, and must follow every rule in this document for the features it advertises (including server-implemented readers and writers).
+A server must only set a feature to `True` when it actually supports it, and must follow every rule in this document for the features it advertises (including server-implemented readers and writers).
+
+An application must treat any feature field missing from the `features` mapping as `False`.
+
+A server may advertise support for any subset of the three features. An application must not use a feature the server has not advertised. If the application attempts to use an unsupported stream feature, the server must raise an error, close the session, and close all streams associated with that session. The application must handle the error at the stream boundary, as described in [Reader and Writer](#reader-and-writer). If the application sends a datagram when datagram support was not advertised, the server must raise an error, close the session, and close all streams associated with that session.
 
 ---
 
@@ -1357,6 +1344,12 @@ async def app(scope, receive, send):
         elif event["type"] == WebTransportConnectionEventType.DISCONNECT:
             return
 ```
+
+---
+
+# WebTransport Error Codes
+
+The current WebTransport draft does not define an error-code mapping. Servers must provide their own mapping.
 
 ---
 
@@ -1741,7 +1734,7 @@ For example:
 
 ```text
 RCP protocol version: 1.0 / 2.0
-Python package release: 2.0.5
+Python package release: 2.0.6
 ```
 
 ---

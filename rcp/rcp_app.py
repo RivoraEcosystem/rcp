@@ -1,12 +1,14 @@
 from collections.abc import Awaitable, Callable
 
-from .events import (
+from .http.events import (
     HTTPDisconnectEvent,
     HTTPRequestEvent,
     HTTPResponseBodyEvent,
     HTTPResponseDebugEvent,
     HTTPResponseStartEvent,
     HTTPResponseTrailersEvent,
+)
+from .lifespan.events import (
     LifespanShutdownCompleteEvent,
     LifespanShutdownEvent,
     LifespanShutdownFailedEvent,
@@ -15,8 +17,7 @@ from .events import (
     LifespanStartupFailedEvent,
 )
 from .scopes import HTTPScope, LifespanScope, WebTransportScope
-from .stream_utils import Reader, Writer
-from .webtransport_event import (
+from .webtransport.webtransport_event import (
     WebTransportClientBidirectionalStreamStarted,
     WebTransportClientUnidirectionalStreamStarted,
     WebTransportCreateServerBidirectionalStream,
@@ -28,6 +29,7 @@ from .webtransport_event import (
     WebTransportSessionDisconnect,
     WebTransportSessionReject,
 )
+from .webtransport.webtransport_stream_utils import Reader, Writer
 
 Scope = HTTPScope | LifespanScope | WebTransportScope
 

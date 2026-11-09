@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 
-from .types import (
+from ..types import (
     WebTransportBidirectionalStreamEventType,
     WebTransportConnectionEventType,
     WebTransportDataEventType,
@@ -12,7 +12,7 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from .stream_utils import Reader, Writer
+    from .webtransport_stream_utils import Reader, Writer
 
 
 Headers = Iterable[tuple[bytes, bytes]]

@@ -3,16 +3,14 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Literal, NotRequired, TypedDict
 
-from .types import (
+from ..types import (
     HTTPConnectionEventType,
     HTTPResponseEventType,
-    LifespanEventType,
 )
 
 Headers = Iterable[tuple[bytes, bytes]]
 
 
-# HTTP events
 class HTTPRequestEvent(TypedDict):
     type: Literal[HTTPConnectionEventType.REQUEST]
     body: bytes
@@ -46,30 +44,3 @@ class HTTPResponseTrailersEvent(TypedDict):
 class HTTPDisconnectEvent(TypedDict):
     type: Literal[HTTPConnectionEventType.DISCONNECT]
     reason: NotRequired[str]
-
-
-# Lifespan events
-class LifespanStartupEvent(TypedDict):
-    type: Literal[LifespanEventType.STARTUP]
-
-
-class LifespanShutdownEvent(TypedDict):
-    type: Literal[LifespanEventType.SHUTDOWN]
-
-
-class LifespanStartupCompleteEvent(TypedDict):
-    type: Literal[LifespanEventType.STARTUP_COMPLETE]
-
-
-class LifespanStartupFailedEvent(TypedDict):
-    type: Literal[LifespanEventType.STARTUP_FAILED]
-    message: str
-
-
-class LifespanShutdownCompleteEvent(TypedDict):
-    type: Literal[LifespanEventType.SHUTDOWN_COMPLETE]
-
-
-class LifespanShutdownFailedEvent(TypedDict):
-    type: Literal[LifespanEventType.SHUTDOWN_FAILED]
-    message: str
