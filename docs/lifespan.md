@@ -6,7 +6,7 @@ The lifespan scope is:
 
 ```python
 class LifespanScope(TypedDict):
-    type: Literal[ScopeType.LIFESPAN]
+    type: Literal["lifespan"]
     rcp: RCP
     state: NotRequired[dict[str, Any]]
 ```
@@ -21,7 +21,7 @@ The server sends:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP,
+    "type": "lifespan.startup",
 }
 ```
 
@@ -29,7 +29,7 @@ The application must respond with either:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP_COMPLETE,
+    "type": "lifespan.startup.complete",
 }
 ```
 
@@ -37,7 +37,7 @@ or:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP_FAILED,
+    "type": "lifespan.startup.failed",
     "message": "Reason",
 }
 ```
@@ -50,7 +50,7 @@ The server sends:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN,
+    "type": "lifespan.shutdown",
 }
 ```
 
@@ -58,7 +58,7 @@ The application responds with either:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN_COMPLETE,
+    "type": "lifespan.shutdown.complete",
 }
 ```
 
@@ -66,7 +66,7 @@ or:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN_FAILED,
+    "type": "lifespan.shutdown.failed",
     "message": "Reason",
 }
 ```

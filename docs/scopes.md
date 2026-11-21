@@ -148,7 +148,7 @@ The same isolation applies to WebTransport: each WebTransport session has its ow
 
 ```python
 class LifespanScope(TypedDict):
-    type: Literal[ScopeType.LIFESPAN]
+    type: Literal["lifespan"]
     rcp: RCP
     state: NotRequired[dict[str, Any]]
 ```
@@ -163,7 +163,7 @@ When the server starts the lifespan protocol, it must provide an empty state dic
 
 ```python
 {
-    "type": ScopeType.LIFESPAN,
+    "type": "lifespan",
     "rcp": {
         "version": RCPVersions.VERSION_1,
     },

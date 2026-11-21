@@ -212,7 +212,7 @@ For an HTTP connection, the server signals termination by sending:
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
 }
 ```
 
@@ -220,7 +220,7 @@ For a WebTransport session, the server signals termination by sending:
 
 ```python
 {
-    "type": WebTransportConnectionEventType.DISCONNECT,
+    "type": "webtransport.disconnect",
     "code": 0,
 }
 ```
@@ -231,7 +231,7 @@ The server may use `reason` to provide additional disconnect information:
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
     "reason": "Connection closed",
 }
 ```
@@ -324,7 +324,7 @@ class WebTransportScope(TypedDict):
 
 | Field          | Description                                                                 |
 | -------------- | --------------------------------------------------------------------------- |
-| `type`         | Always `ScopeType.WEBTRANSPORT` (`"webtransport"`).                         |
+| `type`         | Always `ScopeType.WEBTRANSPORT` (`"webtransport"`).                   |
 | `rcp`          | RCP version information. The version must be `RCPVersions.VERSION_2`.       |
 | `http_version` | Always `HTTPVersions.HTTP3`. WebTransport is only defined over HTTP/3.      |
 | `method`       | The method of the session-establishing request (Extended `CONNECT`).        |
@@ -517,7 +517,7 @@ For example:
 
 ```python
 {
-    "type": HTTPResponseEventType.START,
+    "type": "http.response.start",
     "status": 200,
     "headers": [
         (b"content-type", b"text/plain"),
@@ -551,7 +551,7 @@ Sent by the server to the application.
 
 ```python
 {
-    "type": HTTPConnectionEventType.REQUEST,
+    "type": "http.request",
     "body": b"...",
     "more_body": False,
 }
@@ -589,7 +589,7 @@ Sent by the application to the server.
 
 ```python
 {
-    "type": HTTPResponseEventType.START,
+    "type": "http.response.start",
     "status": 200,
 }
 ```
@@ -598,7 +598,7 @@ With headers:
 
 ```python
 {
-    "type": HTTPResponseEventType.START,
+    "type": "http.response.start",
     "status": 200,
     "headers": [
         (b"content-type", b"text/plain"),
@@ -625,7 +625,7 @@ Applications must not place `:status` inside `headers`.
 
 ```python
 {
-    "type": HTTPResponseEventType.BODY,
+    "type": "http.response.body",
     "body": b"Hello",
     "more_body": False,
 }
@@ -647,7 +647,7 @@ Applications may stream responses by sending multiple body events.
 
 ```python
 {
-    "type": HTTPResponseEventType.TRAILERS,
+    "type": "http.response.trailers",
     "headers": [
         (b"content-md5", b"..."),
     ],
@@ -667,7 +667,7 @@ Pseudo-headers must not be sent through the trailer `headers` collection.
 
 ```python
 {
-    "type": HTTPResponseEventType.DEBUG,
+    "type": "http.response.debug",
     "info": {},
 }
 ```
@@ -686,7 +686,7 @@ Debug information is not part of the HTTP response transmitted to the client.
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
     "reason": "Connection closed",
 }
 ```
@@ -695,7 +695,7 @@ Debug information is not part of the HTTP response transmitted to the client.
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
 }
 ```
 
@@ -707,6 +707,8 @@ The application should stop processing the associated HTTP operation when approp
 
 The server uses this event to communicate termination rather than arbitrarily cancelling the application task.
 
+Once the server has delivered `http.disconnect`, the HTTP stream is closed. The application should stop sending events. If it calls `send()` after the stream has closed, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception, and servers must be prepared to catch it and must not log it as an error.
+
 ## Send
 
 An application may send `HTTPDisconnectEvent` to request immediate connection termination.
@@ -714,7 +716,7 @@ An application may send `HTTPDisconnectEvent` to request immediate connection te
 ```python
 await send(
     {
-        "type": HTTPConnectionEventType.DISCONNECT,
+        "type": "http.disconnect",
         "reason": "Application requested termination",
     }
 )
@@ -878,7 +880,7 @@ Sent by the application to accept the session.
 
 ```python
 {
-    "type": WebTransportConnectionEventType.ACCEPT,
+    "type": "webtransport.accept",
     "headers": [
         (b"x-example", b"value"),
     ],
@@ -892,7 +894,11 @@ Sent by the application to accept the session.
 
 The server completes the WebTransport handshake when it receives this event. Response headers follow the [Response Header Validation](#response-header-validation) rules.
 
-Datagrams and streams must not be sent before the session has been accepted.
+### Receive and send before acceptance
+
+Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event before acceptance. The application may call `receive()` before acceptance, and the server must continue delivering available receive events. Client stream readers may be used before acceptance, but stream writers may not; readers follow the same lifecycle rules as `receive()`, and writers follow the same rules as `send()`, subject to the event types each interface allows.
+
+`webtransport.accept` may be sent only once. A second accept is a protocol violation and the server must raise an error.
 
 ## `WebTransportSessionReject`
 
@@ -900,7 +906,7 @@ Sent by the application to reject the session.
 
 ```python
 {
-    "type": WebTransportConnectionEventType.REJECT,
+    "type": "webtransport.reject",
     "status": 403,
 }
 ```
@@ -910,7 +916,7 @@ Sent by the application to reject the session.
 | `type`   | Event type.                                              |
 | `status` | HTTP status code returned for the rejected session.      |
 
-After a rejection, the session does not exist and no further events are exchanged.
+After sending `webtransport.reject`, the application must return and must not send any further events. The session does not exist and no further events are exchanged. If the application sends another event after rejection, the server must raise an error.
 
 ## `WebTransportSessionClose`
 
@@ -918,7 +924,7 @@ Sent by the application to request that the session be closed.
 
 ```python
 {
-    "type": WebTransportConnectionEventType.CLOSE,
+    "type": "webtransport.close",
     "error_code": 0,
     "reason": "Done",
 }
@@ -940,7 +946,7 @@ Sent by the server to notify the application that the client has disconnected.
 
 ```python
 {
-    "type": WebTransportConnectionEventType.DISCONNECT,
+    "type": "webtransport.disconnect",
     "code": 0,
     "reason": "Client closed the session",
 }
@@ -956,6 +962,10 @@ After this event the session is over. The application should stop processing it 
 
 The server uses this event to communicate termination rather than arbitrarily cancelling the application task.
 
+Whenever a WebTransport session closes, the server must deliver `webtransport.disconnect` to the application. If the application is still waiting in `receive()`, that call must return the disconnect event.
+
+After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If it continues to call `send()` or `Writer.write()`, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
+
 ---
 
 # WebTransport Datagrams
@@ -966,7 +976,7 @@ Sent by the server when a datagram arrives from the client.
 
 ```python
 {
-    "type": WebTransportDatagramEventType.RECEIVED,
+    "type": "webtransport.datagram.received",
     "data": b"...",
 }
 ```
@@ -978,7 +988,7 @@ Sent by the application to send a datagram to the client.
 ```python
 await send(
     {
-        "type": WebTransportDatagramEventType.SEND,
+        "type": "webtransport.datagram.send",
         "data": b"...",
     }
 )
@@ -1052,7 +1062,7 @@ class Writer(ABC):
 ```python
 await writer.write(
     {
-        "type": WebTransportDataEventType.SEND,
+        "type": "webtransport.data.send",
         "data": b"Hello",
     }
 )
@@ -1090,7 +1100,7 @@ Read events have the form:
 
 ```python
 {
-    "type": WebTransportDataEventType.RECEIVED,
+    "type": "webtransport.data.received",
     "data": b"...",
 }
 ```
@@ -1133,7 +1143,7 @@ Fires when the client starts a unidirectional stream. The server provides a **re
 
 ```python
 {
-    "type": WebTransportUnidirectionalStreamEventType.CLIENT,
+    "type": "webtransport.unidirectional.client",
     "reader": reader,
 }
 ```
@@ -1149,7 +1159,7 @@ Fires when the client starts a bidirectional stream. The server provides a **rea
 
 ```python
 {
-    "type": WebTransportBidirectionalStreamEventType.CLIENT,
+    "type": "webtransport.bidirectional.client",
     "reader": reader,
     "writer": writer,
 }
@@ -1172,7 +1182,7 @@ The application can open streams toward the client at any time after the session
 ```python
 writer = await send(
     {
-        "type": WebTransportUnidirectionalStreamEventType.SERVER,
+        "type": "webtransport.unidirectional.server",
     }
 )
 ```
@@ -1191,7 +1201,7 @@ A unidirectional server stream has no reader.
 ```python
 writer, reader = await send(
     {
-        "type": WebTransportBidirectionalStreamEventType.SERVER,
+        "type": "webtransport.bidirectional.server",
     }
 )
 ```
@@ -1266,31 +1276,24 @@ A server may advertise support for any subset of the three features. An applicat
 ## Datagram echo
 
 ```python
-from rcp import (
-    ScopeType,
-    WebTransportConnectionEventType,
-    WebTransportDatagramEventType,
-)
-
-
 async def app(scope, receive, send):
-    if scope["type"] != ScopeType.WEBTRANSPORT:
+    if scope["type"] != "webtransport":
         return
 
-    await send({"type": WebTransportConnectionEventType.ACCEPT})
+    await send({"type": "webtransport.accept"})
 
     while True:
         event = await receive()
 
-        if event["type"] == WebTransportDatagramEventType.RECEIVED:
+        if event["type"] == "webtransport.datagram.received":
             await send(
                 {
-                    "type": WebTransportDatagramEventType.SEND,
+                    "type": "webtransport.datagram.send",
                     "data": event["data"],
                 }
             )
 
-        elif event["type"] == WebTransportConnectionEventType.DISCONNECT:
+        elif event["type"] == "webtransport.disconnect":
             return
 ```
 
@@ -1299,21 +1302,12 @@ async def app(scope, receive, send):
 ```python
 import asyncio
 
-from rcp import (
-    ScopeType,
-    WebTransportBidirectionalStreamEventType,
-    WebTransportConnectionEventType,
-    WebTransportDataEventType,
-    WebTransportUnidirectionalStreamEventType,
-)
-
-
 async def echo(reader, writer):
     while not reader.is_closed and not writer.is_closed:
         event = await reader.read()
         await writer.write(
             {
-                "type": WebTransportDataEventType.SEND,
+                "type": "webtransport.data.send",
                 "data": event["data"],
             }
         )
@@ -1321,27 +1315,27 @@ async def echo(reader, writer):
 
 
 async def app(scope, receive, send):
-    if scope["type"] != ScopeType.WEBTRANSPORT:
+    if scope["type"] != "webtransport":
         return
 
-    await send({"type": WebTransportConnectionEventType.ACCEPT})
+    await send({"type": "webtransport.accept"})
 
     # Server-initiated unidirectional stream: send returns the Writer.
     writer = await send(
-        {"type": WebTransportUnidirectionalStreamEventType.SERVER}
+        {"type": "webtransport.unidirectional.server"}
     )
     await writer.write(
-        {"type": WebTransportDataEventType.SEND, "data": b"welcome"}
+        {"type": "webtransport.data.send", "data": b"welcome"}
     )
     await writer.close()
 
     while True:
         event = await receive()
 
-        if event["type"] == WebTransportBidirectionalStreamEventType.CLIENT:
+        if event["type"] == "webtransport.bidirectional.client":
             asyncio.create_task(echo(event["reader"], event["writer"]))
 
-        elif event["type"] == WebTransportConnectionEventType.DISCONNECT:
+        elif event["type"] == "webtransport.disconnect":
             return
 ```
 
@@ -1421,7 +1415,7 @@ The server sends:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP,
+    "type": "lifespan.startup",
 }
 ```
 
@@ -1429,7 +1423,7 @@ The application must respond with either:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP_COMPLETE,
+    "type": "lifespan.startup.complete",
 }
 ```
 
@@ -1437,7 +1431,7 @@ or:
 
 ```python
 {
-    "type": LifespanEventType.STARTUP_FAILED,
+    "type": "lifespan.startup.failed",
     "message": "Reason",
 }
 ```
@@ -1450,7 +1444,7 @@ The server sends:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN,
+    "type": "lifespan.shutdown",
 }
 ```
 
@@ -1458,7 +1452,7 @@ The application responds with either:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN_COMPLETE,
+    "type": "lifespan.shutdown.complete",
 }
 ```
 
@@ -1466,7 +1460,7 @@ or:
 
 ```python
 {
-    "type": LifespanEventType.SHUTDOWN_FAILED,
+    "type": "lifespan.shutdown.failed",
     "message": "Reason",
 }
 ```
@@ -1476,13 +1470,10 @@ or:
 # Complete Application Example
 
 ```python
-from rcp import HTTPResponseEventType
-
-
 async def app(scope, receive, send):
     await send(
         {
-            "type": HTTPResponseEventType.START,
+            "type": "http.response.start",
             "status": 200,
             "headers": [
                 (b"content-type", b"text/plain"),
@@ -1492,7 +1483,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"Hello from RCP",
             "more_body": False,
         }
@@ -1506,13 +1497,10 @@ async def app(scope, receive, send):
 An application can stream a response using multiple body events:
 
 ```python
-from rcp import HTTPResponseEventType
-
-
 async def app(scope, receive, send):
     await send(
         {
-            "type": HTTPResponseEventType.START,
+            "type": "http.response.start",
             "status": 200,
             "headers": [
                 (b"content-type", b"text/plain"),
@@ -1522,7 +1510,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"First chunk\n",
             "more_body": True,
         }
@@ -1530,7 +1518,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"Second chunk\n",
             "more_body": False,
         }

@@ -69,6 +69,8 @@ For HTTP connections, the application can receive request body events and discon
 
 For WebTransport sessions (RCP 2.0), the application can receive datagrams, client-started streams, and session disconnect events.
 
+The server must continue delivering available WebTransport receive events when the application calls `receive()`, including before the session is accepted. If the session closes while `receive()` is waiting, the server must return `webtransport.disconnect`.
+
 For lifespan, the application receives startup and shutdown events.
 
 ### `send`
@@ -82,6 +84,8 @@ await send(event)
 The server is responsible for validating and translating these events into the underlying HTTP/3, WebTransport, or lifecycle operation.
 
 For most events, `send` returns `None`. For events that create server-initiated WebTransport streams, `send` returns the stream writer (and reader, for bidirectional streams). See [Server-Initiated Streams](webtransport.md#server-initiated-streams).
+
+For WebTransport, before acceptance the application may send only `webtransport.accept` or `webtransport.reject`; an accept may be sent only once. After rejection, the application must return. The server must reject invalid sends for the current session state. See [WebTransport session lifecycle](webtransport.md#webtransport-session-events) for the receive, send, and stream reader/writer rules.
 
 ---
 
@@ -97,7 +101,7 @@ For an HTTP connection, the server signals termination by sending:
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
 }
 ```
 
@@ -105,18 +109,20 @@ For a WebTransport session, the server signals termination by sending:
 
 ```python
 {
-    "type": WebTransportConnectionEventType.DISCONNECT,
+    "type": "webtransport.disconnect",
     "code": 0,
 }
 ```
 
 The application should respond to these events and terminate its processing when appropriate.
 
+After a disconnect event has been delivered, the connection or session is closed. The application should stop sending events. If it continues to call `send()` after closure, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception, and servers must be prepared to catch it without logging it as an error.
+
 The server may use `reason` to provide additional disconnect information:
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
     "reason": "Connection closed",
 }
 ```
@@ -135,7 +141,7 @@ Sent by the server to the application.
 
 ```python
 {
-    "type": HTTPConnectionEventType.REQUEST,
+    "type": "http.request",
     "body": b"...",
     "more_body": False,
 }
@@ -173,7 +179,7 @@ Sent by the application to the server.
 
 ```python
 {
-    "type": HTTPResponseEventType.START,
+    "type": "http.response.start",
     "status": 200,
 }
 ```
@@ -182,7 +188,7 @@ With headers:
 
 ```python
 {
-    "type": HTTPResponseEventType.START,
+    "type": "http.response.start",
     "status": 200,
     "headers": [
         (b"content-type", b"text/plain"),
@@ -209,7 +215,7 @@ Applications must not place `:status` inside `headers`.
 
 ```python
 {
-    "type": HTTPResponseEventType.BODY,
+    "type": "http.response.body",
     "body": b"Hello",
     "more_body": False,
 }
@@ -231,7 +237,7 @@ Applications may stream responses by sending multiple body events.
 
 ```python
 {
-    "type": HTTPResponseEventType.TRAILERS,
+    "type": "http.response.trailers",
     "headers": [
         (b"content-md5", b"..."),
     ],
@@ -251,7 +257,7 @@ Pseudo-headers must not be sent through the trailer `headers` collection.
 
 ```python
 {
-    "type": HTTPResponseEventType.DEBUG,
+    "type": "http.response.debug",
     "info": {},
 }
 ```
@@ -270,7 +276,7 @@ Debug information is not part of the HTTP response transmitted to the client.
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
     "reason": "Connection closed",
 }
 ```
@@ -279,7 +285,7 @@ Debug information is not part of the HTTP response transmitted to the client.
 
 ```python
 {
-    "type": HTTPConnectionEventType.DISCONNECT,
+    "type": "http.disconnect",
 }
 ```
 
@@ -288,6 +294,8 @@ Debug information is not part of the HTTP response transmitted to the client.
 When sent by the server to the application, the event indicates that the HTTP stream has been disconnected.
 
 The application should stop processing the associated HTTP operation when appropriate.
+
+When the HTTP stream closes, the server must deliver `http.disconnect`; if `receive()` is pending, it must return that event.
 
 The server uses this event to communicate termination rather than arbitrarily cancelling the application task.
 
@@ -298,7 +306,7 @@ An application may send `HTTPDisconnectEvent` to request immediate connection te
 ```python
 await send(
     {
-        "type": HTTPConnectionEventType.DISCONNECT,
+        "type": "http.disconnect",
         "reason": "Application requested termination",
     }
 )
@@ -311,13 +319,10 @@ When handling this event from an application, the server should terminate the as
 ## Complete Application Example
 
 ```python
-from rcp import HTTPResponseEventType
-
-
 async def app(scope, receive, send):
     await send(
         {
-            "type": HTTPResponseEventType.START,
+            "type": "http.response.start",
             "status": 200,
             "headers": [
                 (b"content-type", b"text/plain"),
@@ -327,7 +332,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"Hello from RCP",
             "more_body": False,
         }
@@ -341,13 +346,10 @@ async def app(scope, receive, send):
 An application can stream a response using multiple body events:
 
 ```python
-from rcp import HTTPResponseEventType
-
-
 async def app(scope, receive, send):
     await send(
         {
-            "type": HTTPResponseEventType.START,
+            "type": "http.response.start",
             "status": 200,
             "headers": [
                 (b"content-type", b"text/plain"),
@@ -357,7 +359,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"First chunk\n",
             "more_body": True,
         }
@@ -365,7 +367,7 @@ async def app(scope, receive, send):
 
     await send(
         {
-            "type": HTTPResponseEventType.BODY,
+            "type": "http.response.body",
             "body": b"Second chunk\n",
             "more_body": False,
         }
@@ -393,8 +395,9 @@ An RCP application should:
 A WebTransport application (RCP 2.0) should additionally:
 
 * Only handle `webtransport` scopes when the RCP version is 2.0.
-* Send `webtransport.accept` or `webtransport.reject` before using the session.
+* Send only `webtransport.accept` or `webtransport.reject` before acceptance; accept once, and return after rejection.
 * Handle `webtransport.disconnect` and stop processing the session.
+* Handle server errors from sending or writing after the connection or session has closed.
 * Use the `Reader` and `Writer` objects provided by the server, and never implement or substitute its own.
 * Use the return value of `send` when creating server-initiated streams: a `Writer` for unidirectional streams and `(Writer, Reader)` for bidirectional streams.
 * Check `is_closed` before reading from or writing to a stream.
