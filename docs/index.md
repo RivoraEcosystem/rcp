@@ -114,11 +114,10 @@ pip install rivora-rcp
 ---
 
 
-## Documentation
-
 ```{toctree}
 :maxdepth: 3
 :caption: Guide
+:hidden:
 
 application
 scopes
