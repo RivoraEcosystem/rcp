@@ -168,7 +168,7 @@ The server completes the WebTransport handshake when it receives this event. Res
 
 ### Receive and send before acceptance
 
-Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event before acceptance. The application may call `receive()` before acceptance, and the server must continue delivering available receive events.Stream readers may be used before acceptance, but stream writers may not; readers follow the same lifecycle rules as `receive()`, and writers follow the same rules as `send()`, subject to the event types each interface allows.
+Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event before acceptance. The application may call `receive()` before acceptance, and the server must continue delivering available receive events. Stream readers may be used before acceptance, but stream writers may not; readers follow the same lifecycle rules as `receive()`, and writers follow the same rules as `send()`, subject to the event types each interface allows.
 
 `webtransport.accept` may be sent only once. A second accept is a protocol violation and the server must raise an error.
 

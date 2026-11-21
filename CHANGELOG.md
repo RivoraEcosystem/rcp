@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.7
+
+### Added
+
+- Exposed the `Headers` type alias from the top-level `rcp` package alongside the other public events and types.
+
+### Changed
+
+- Clarified WebTransport accept, reject, receive, and stream reader/writer lifecycle rules.
+- Clarified disconnect delivery and behavior when applications send or write after an HTTP stream or WebTransport session closes.
+- Updated documentation examples to use protocol event strings directly.
+- Updated package metadata and the internal package version to `2.0.7`.
+
 ## 2.0.6
 
 ### Changed
