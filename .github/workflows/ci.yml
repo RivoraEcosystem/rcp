@@ -1,4 +1,4 @@
-name: Quality and Release Checks
+name: CI and Release Checks
 
 on:
   pull_request:
@@ -11,7 +11,22 @@ permissions:
   contents: read
 
 jobs:
-  quality:
+  docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Build documentation
+        env:
+          READTHEDOCS: "True"
+        run: |
+          python -m pip install . -r requirements/docs.txt
+          make -C docs html SPHINXOPTS=-W
+
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -28,15 +43,15 @@ jobs:
       - name: Ruff format check
         run: ruff format --check rcp .github/scripts
       - name: Codespell
-        run: codespell rcp README.md docs/documentation.md CHANGELOG.md pyproject.toml MANIFEST.in .codespellrc requirements/ci.txt .github/workflows/quality.yml .github/release-files.json .github/scripts/check_release_contents.py
+        run: codespell rcp README.md docs CHANGELOG.md pyproject.toml MANIFEST.in .codespellrc requirements/ci.txt requirements/docs.txt .readthedocs.yaml .github/workflows/ci.yml .github/release-files.json .github/scripts/check_release_contents.py
       - name: Pylint import and circular import checks
-        run: pylint --disable=all --enable=E0401,E0402,E0611,R0401 --ignored-modules=uvloop,winloop rcp
+        run: pylint --disable=all --enable=E0401,E0402,E0611,R0401 rcp
       - name: Check source distribution manifest
         run: check-manifest
 
   package-build:
     name: Build package
-    needs: quality
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -59,7 +74,7 @@ jobs:
 
   build-inspection:
     name: Inspect the build
-    needs: [quality, package-build]
+    needs: [checks, package-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
@@ -82,7 +97,7 @@ jobs:
 
   build-check:
     name: Check the build against source
-    needs: [quality, package-build, build-inspection]
+    needs: [checks, package-build, build-inspection]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -99,7 +114,7 @@ jobs:
         run: python .github/scripts/check_release_contents.py --dist-dir dist
 
   publish:
-    needs: [quality, package-build, build-inspection, build-check]
+    needs: [checks, package-build, build-inspection, build-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8

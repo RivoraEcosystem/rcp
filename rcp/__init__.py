@@ -1,4 +1,5 @@
 from .http.events import (
+    Headers,
     HTTPDisconnectEvent,
     HTTPRequestEvent,
     HTTPResponseBodyEvent,
@@ -89,6 +90,7 @@ __all__ = [
     "HTTPScope",
     "HTTPSendEvents",
     "HTTPVersions",
+    "Headers",
     "LifespanEventType",
     "LifespanReceiveEvents",
     "LifespanScope",
@@ -134,4 +136,4 @@ __all__ = [
     "Writer",
 ]
 
-__version__ = "2.0.6"
+__version__ = "2.0.7"
