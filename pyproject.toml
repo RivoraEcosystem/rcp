@@ -61,4 +61,4 @@ exclude = [
 ]
 
 [tool.check-manifest]
-ignore = [".codespellrc", "CHANGELOG.md", "docs/documentation.md", "requirements/ci.txt"]
+ignore = [".codespellrc", "CHANGELOG.md", "docs/*", "requirements/ci.txt", "requirements/docs.txt", ".readthedocs.yaml"]

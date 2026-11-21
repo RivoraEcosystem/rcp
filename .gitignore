@@ -3,6 +3,7 @@ cert.pem
 key.pem
 test.py
 dev_logs/
+docs/_build/
 
 __pycache__/
 *.py[cod]
