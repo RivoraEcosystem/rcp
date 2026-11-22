@@ -37,6 +37,6 @@ RCP applications are asynchronous callables that receive a `scope`, `receive`, a
 
 The RCP protocol version is separate from the Python package version.
 
-To learn more about `rcp`, please [read the documentation](https://rcp.bhavyamalhotra.in).
+To learn more about `rcp`, please [read the documentation](https://rcp.readthedocs.io/).
 
 RCP is licensed under the [MIT License](LICENSE).
