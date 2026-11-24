@@ -1,48 +1,29 @@
-from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 
 from .webtransport_event import (
-    WebTransportStreamReadEvent,
-    WebTransportStreamWriteEvent,
+    WebTransportDataReceived,
+    WebTransportDataSend,
+    WebTransportStreamDisconnected,
+    WebTransportStreamClose,
+    WebTransportStreamStopReceive,
+    WebTransportStreamSendingStopped,
 )
 
 
-class Writer(ABC):
-    "Webtransport Stream Writer"
+WebTransportStreamReceiveEvents = (
+    WebTransportDataReceived
+    | WebTransportStreamDisconnected
+    | WebTransportStreamSendingStopped
+)
 
-    def __init__(self):
-        self._closed: bool = False
+WebTransportStreamSendEvents = (
+    WebTransportDataSend | WebTransportStreamClose | WebTransportStreamStopReceive
+)
 
-    @property
-    def is_closed(self) -> bool:
-        return self._closed
+WebTransportStreamReceiveCallable = Callable[
+    [], Awaitable[WebTransportStreamReceiveEvents]
+]
 
-    @abstractmethod
-    async def write(self, event: WebTransportStreamWriteEvent) -> None:
-        """Write events to stream"""
-        ...
-
-    @abstractmethod
-    async def close(self) -> None:
-        """Stop and close writing on stream"""
-        ...
-
-
-class Reader(ABC):
-    "Webtransport Stream Reader"
-
-    def __init__(self):
-        self._closed: bool = False
-
-    @property
-    def is_closed(self) -> bool:
-        return self._closed
-
-    @abstractmethod
-    async def read(self) -> WebTransportStreamReadEvent:
-        """read events from stream"""
-        ...
-
-    @abstractmethod
-    async def close(self) -> None:
-        """Stop and close writing on stream"""
-        ...
+WebTransportStreamSendCallable = Callable[
+    [WebTransportStreamSendEvents], Awaitable[None]
+]
