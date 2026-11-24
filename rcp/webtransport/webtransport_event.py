@@ -145,23 +145,25 @@ class WebTransportDataSend(TypedDict):
 # WebTransport stream termination and direction-control events
 
 class WebTransportStreamDisconnected(TypedDict):
-    """Fires when the stream has been terminated in both directions.
+    """Fires when the stream has been terminated in both directions, or in its
+    available direction for a unidirectional stream.
 
     The error code is 0 when termination had no error.
     """
 
     type: Literal[WebTransportStreamTerminationEventType.DISCONNECT]
-    error_code: int
+    error_code: NotRequired[int]
 
 
 class WebTransportStreamClose(TypedDict):
-    """Requests termination of the stream in both directions.
+    """Requests termination of the stream in both directions, or in its
+    available direction for a unidirectional stream.
 
     The error code is 0 when termination has no error.
     """
 
     type: Literal[WebTransportStreamTerminationEventType.CLOSE]
-    error_code: int
+    error_code: NotRequired[int]
 
 
 class WebTransportStreamStopReceive(TypedDict):
@@ -171,7 +173,7 @@ class WebTransportStreamStopReceive(TypedDict):
     """
 
     type: Literal[WebTransportStreamTerminationEventType.STOP_RECEIVE]
-    error_code: int
+    error_code: NotRequired[int]
 
 class WebTransportStreamSendingStopped(TypedDict):
     """Fires when the client requested stopping on the application's sending side.
@@ -180,4 +182,4 @@ class WebTransportStreamSendingStopped(TypedDict):
     """
 
     type: Literal[WebTransportStreamTerminationEventType.SENDING_STOPPED]
-    error_code: int
+    error_code: NotRequired[int]

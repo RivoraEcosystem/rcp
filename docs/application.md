@@ -39,11 +39,17 @@ RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
 
 RCPSendCallable = Callable[
     [RCPSendEvent],
-    Awaitable[None | Writer | tuple[Writer, Reader]],
+    Awaitable[
+        None
+        | tuple[
+            WebTransportStreamReceiveCallable,
+            WebTransportStreamSendCallable,
+        ]
+    ],
 ]
 ```
 
-`send` returns `None` for events that do not create a server-initiated stream. It returns a `Writer` for a server-initiated unidirectional stream and a `(Writer, Reader)` tuple for a server-initiated bidirectional stream.
+`send` returns `None` for events that do not create a server-initiated stream. It returns a `(receiver, sender)` tuple of callables for every server-initiated stream.
 
 A complete application is therefore an awaitable callable receiving:
 
@@ -83,9 +89,9 @@ await send(event)
 
 The server is responsible for validating and translating these events into the underlying HTTP/3, WebTransport, or lifecycle operation.
 
-For most events, `send` returns `None`. For events that create server-initiated WebTransport streams, `send` returns the stream writer (and reader, for bidirectional streams). See [Server-Initiated Streams](webtransport.md#server-initiated-streams).
+For most events, `send` returns `None`. For events that create server-initiated WebTransport streams, `send` returns the stream sender and receiver, for bidirectional and unidirectional streams. See [Server-Initiated Streams](webtransport.md#server-initiated-streams).
 
-For WebTransport, before acceptance the application may send only `webtransport.accept` or `webtransport.reject`; an accept may be sent only once. After rejection, the application must return. The server must reject invalid sends for the current session state. See [WebTransport session lifecycle](webtransport.md#webtransport-session-events) for the receive, send, and stream reader/writer rules.
+For WebTransport, before acceptance the application may send only `webtransport.accept` or `webtransport.reject`; an accept may be sent only once. After rejection, the application must return. The server must reject invalid sends for the current session state. See [WebTransport session lifecycle](webtransport.md#webtransport-session-events) for the receive, send, and stream receiver/sender rules.
 
 ---
 
@@ -398,9 +404,9 @@ A WebTransport application (RCP 2.0) should additionally:
 * Send only `webtransport.accept` or `webtransport.reject` before acceptance; accept once, and return after rejection.
 * Handle `webtransport.disconnect` and stop processing the session.
 * Handle server errors from sending or writing after the connection or session has closed.
-* Use the `Reader` and `Writer` objects provided by the server, and never implement or substitute its own.
-* Use the return value of `send` when creating server-initiated streams: a `Writer` for unidirectional streams and `(Writer, Reader)` for bidirectional streams.
-* Check `is_closed` before reading from or writing to a stream.
-* Close readers and writers when finished with them.
+* Use the stream receiver and sender callables provided by the server.
+* Use the `(receiver, sender)` tuple returned by `send` when creating any server-initiated stream.
+* Only send events in sender and accept events from receiver that are allowed in current stream direction.
+* Follow the stream receiver and sender lifecycle rules when finished with each direction.
 * Check `scope["extensions"]["webtransport"]` when running on a non-RCP server.
 

@@ -77,7 +77,7 @@ Application sends webtransport.accept (or webtransport.reject)
 Server completes the WebTransport handshake
    ↓
 Datagrams and streams are exchanged through events,
-stream readers, and stream writers
+stream receiver and sender callables
    ↓
 webtransport.close / webtransport.disconnect
 ```
@@ -101,7 +101,7 @@ RCP is designed around the following goals:
 * HTTP/3 header and pseudo-header handling
 * Forward compatibility through HTTP extensions
 * WebTransport support (RCP 2.0): datagrams, unidirectional streams, and bidirectional streams
-* Server-implemented stream readers and writers
+* Server-provided stream receiver and sender callables
 
 ---
 

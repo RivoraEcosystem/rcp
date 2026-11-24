@@ -77,7 +77,7 @@ Application sends webtransport.accept (or webtransport.reject)
 Server completes the WebTransport handshake
    ↓
 Datagrams and streams are exchanged through events,
-stream readers, and stream writers
+stream receivers, and stream senders
    ↓
 webtransport.close / webtransport.disconnect
 ```
@@ -101,7 +101,7 @@ RCP is designed around the following goals:
 * HTTP/3 header and pseudo-header handling
 * Forward compatibility through HTTP extensions
 * WebTransport support (RCP 2.0): datagrams, unidirectional streams, and bidirectional streams
-* Server-implemented stream readers and writers
+* Server-implemented stream receivers and senders
 
 ---
 
@@ -154,11 +154,11 @@ RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
 
 RCPSendCallable = Callable[
     [RCPSendEvent],
-    Awaitable[None | Writer | tuple[Writer, Reader]],
+    Awaitable[None | tuple[WebTransportStreamReceiveCallable, WebTransportStreamSendCallable]],
 ]
 ```
 
-`send` returns `None` for events that do not create a server-initiated stream. It returns a `Writer` for a server-initiated unidirectional stream and a `(Writer, Reader)` tuple for a server-initiated bidirectional stream.
+`send` returns `None` for other events and `(receiver, sender)` callables for every server-initiated stream.
 
 A complete application is therefore an awaitable callable receiving:
 
@@ -196,7 +196,7 @@ await send(event)
 
 The server is responsible for validating and translating these events into the underlying HTTP/3, WebTransport, or lifecycle operation.
 
-For most events, `send` returns `None`. For events that create server-initiated WebTransport streams, `send` returns the stream writer (and reader, for bidirectional streams). See [Server-Initiated Streams](#server-initiated-streams).
+For most events, `send` returns `None`. For every event that creates a server-initiated WebTransport stream, `send` returns `(receiver, sender)` in that order. See [Server-Initiated Streams](#server-initiated-streams).
 
 ---
 
@@ -744,7 +744,7 @@ WebTransport support is defined by **RCP version 2.0** and must only be used wit
 
 * A `webtransport` scope must carry `scope["rcp"]["version"] == RCPVersions.VERSION_2`.
 * A server that implements only RCP 1.0 must not create WebTransport scopes.
-* WebTransport events, streams, readers, and writers must not be used in RCP 1.0 applications.
+* WebTransport events, streams, receivers, and senders must not be used in RCP 1.0 applications.
 * RCP 2.0 includes everything defined by RCP 1.0.
 
 WebTransport runs over HTTP/3. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header is `webtransport`. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
@@ -766,7 +766,7 @@ Each WebTransport session has its own:
 * WebTransport scope
 * receive and send events
 * datagrams
-* streams, stream readers, and stream writers
+* streams, stream receivers, and stream senders
 * session lifecycle
 * disconnect state
 
@@ -789,8 +789,8 @@ The termination of one session must not terminate unrelated sessions or HTTP str
                            │                │
                   ┌────────┼────────┐       ▼
                   ▼        ▼        ▼   Application
-               Datagrams Streams  Readers/
-                                  Writers
+               Datagrams Streams  Receivers/
+                                  Senders
 ```
 
 ---
@@ -825,6 +825,13 @@ class WebTransportDatagramEventType(StrEnum):
 class WebTransportDataEventType(StrEnum):
     RECEIVED = "webtransport.data.received"
     SEND = "webtransport.data.send"
+
+
+class WebTransportStreamTerminationEventType(StrEnum):
+    CLOSE = "webtransport.stream.close"
+    DISCONNECT = "webtransport.stream.disconnect"
+    STOP_RECEIVE = "webtransport.stream.stop_receive"
+    SENDING_STOPPED = "webtransport.stream.sending_stopped"
 ```
 
 ## Events at a glance
@@ -842,12 +849,16 @@ Events exchanged through `receive` and `send`:
 | Application → Server     | `WebTransportCreateServerUnidirectionalStream`     | `webtransport.unidirectional.server`   |
 | Application → Server     | `WebTransportCreateServerBidirectionalStream`      | `webtransport.bidirectional.server`    |
 
-Events exchanged through stream readers and writers (not through `receive` / `send`):
+Events exchanged through stream receivers and senders (not through `receive` / `send`):
 
 | Direction                | Event                          | Type string                    |
 | ------------------------ | ------------------------------ | ------------------------------ |
-| Reader → Application     | `WebTransportDataReceived`     | `webtransport.data.received`   |
-| Application → Writer     | `WebTransportDataSend`         | `webtransport.data.send`       |
+| Stream receiver → Application | `WebTransportDataReceived` | `webtransport.data.received` |
+| Stream receiver → Application | `WebTransportStreamDisconnected` | `webtransport.stream.disconnect` |
+| Stream receiver → Application | `WebTransportStreamSendingStopped` | `webtransport.stream.sending_stopped` |
+| Application → Stream sender | `WebTransportDataSend` | `webtransport.data.send` |
+| Application → Stream sender | `WebTransportStreamClose` | `webtransport.stream.close` |
+| Application → Stream sender | `WebTransportStreamStopReceive` | `webtransport.stream.stop_receive` |
 
 The corresponding type aliases are:
 
@@ -866,8 +877,24 @@ WebtransportSendEvent = (
     | WebTransportSessionAccept
 )
 
-WebTransportStreamReadEvent = WebTransportDataReceived
-WebTransportStreamWriteEvent = WebTransportDataSend
+WebTransportStreamReceiveEvents = (
+    WebTransportDataReceived
+    | WebTransportStreamDisconnected
+    | WebTransportStreamSendingStopped
+)
+
+WebTransportStreamSendEvents = (
+    WebTransportDataSend
+    | WebTransportStreamClose
+    | WebTransportStreamStopReceive
+)
+
+WebTransportStreamReceiveCallable = Callable[
+    [], Awaitable[WebTransportStreamReceiveEvents]
+]
+WebTransportStreamSendCallable = Callable[
+    [WebTransportStreamSendEvents], Awaitable[None]
+]
 ```
 
 ---
@@ -898,7 +925,7 @@ The server completes the WebTransport handshake when it receives this event. Res
 
 Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event through `send()`.
 
-The application may call `receive()` before acceptance. The server must continue delivering available receive events. Client stream readers may also be used before acceptance, but stream writers may not.
+The application may call `receive()` before acceptance. The server must continue delivering available receive events. Client stream receivers may also be used before acceptance, but stream senders may not.
 
 Datagram receive callables follow the receive lifecycle and must deliver available datagrams when called, including before session acceptance. Datagram send callables follow the send lifecycle and must raise an error if used before acceptance.
 
@@ -940,7 +967,7 @@ Sent by the application to request that the session be closed.
 | `error_code` | Optional application error code.           |
 | `reason`     | Optional human-readable close reason.      |
 
-When the server handles this event it closes the session and all of its streams. Every stream reader and writer belonging to the session must be marked closed.
+When the server handles this event it closes the session and all of its streams. Every stream receiver and sender belonging to the session must be closed.
 
 **Note:** A server must treat the `error_code` in `webtransport.close` as the session's error code. It must not interpret it as a stream close or reset code and must pass it as the application error code when closing the session.
 
@@ -962,13 +989,13 @@ Sent by the server to notify the application that the client has disconnected.
 | `code`   | Close code associated with the disconnect.    |
 | `reason` | Optional disconnect reason.                   |
 
-After this event the session is over. The application should stop processing it and the server must mark every remaining reader and writer of the session as closed.
+After this event the session is over. The application should stop processing it and the server must mark every remaining stream receivers and senders of the session as closed.
 
 The server uses this event to communicate termination rather than arbitrarily cancelling the application task.
 
 Whenever a WebTransport session closes, the server must deliver `webtransport.disconnect` to the application. If the application is still waiting in `receive()`, that call must return the disconnect event.
 
-After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If the client disconnects and the application continues to call `send()`, `Writer.write()`, or the datagram send callable, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
+After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream senders. If the client disconnects and the application continues to call `send()`, `stream sender`, or the datagram send callable, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
 
 ---
 
@@ -1019,7 +1046,7 @@ The send callable follows the lifecycle rules of `send()`. Sending before the se
 
 The application continues to receive `webtransport.disconnect` through the general `receive()` callable. The datagram receive callable must not return that event.
 
-After the client disconnects or the session is rejected, the application must stop datagram operations. If it calls the datagram send callable after the client disconnects, the server must raise an exception. A subclass of `OSError` is recommended but not required; the server should catch it without logging it as an error, following the rule for `send()` and `Writer.write()` above.
+After the client disconnects or the session is rejected, the application must stop datagram operations. If it calls the datagram send callable after the client disconnects, the server must raise an exception. A subclass of `OSError` is recommended but not required; the server should catch it without logging it as an error, following the rule for `send()` and `stream sender` above.
 
 Datagrams are unreliable and unordered. The server may drop a datagram it cannot deliver.
 
@@ -1027,221 +1054,190 @@ Datagrams are unreliable and unordered. The server may drop a datagram it cannot
 
 # WebTransport Streams
 
-WebTransport streams are not delivered as a single event stream through `receive`. Instead, the server exposes each stream through a **Reader** and/or a **Writer**:
+Each WebTransport stream has a **receiver callable** and a **sender callable**. A receiver takes no arguments and returns the next event from the stream. A sender accepts one event and returns `None`. These stream-specific callables are separate from the session `receive` and `send` callables.
 
-| Stream kind                   | Started by | How the application gets it                                  | Reader | Writer |
-| ----------------------------- | ---------- | ------------------------------------------------------------ | ------ | ------ |
-| Client unidirectional stream  | Client     | `webtransport.unidirectional.client` event (via `receive`)   | Yes    | No     |
-| Client bidirectional stream   | Client     | `webtransport.bidirectional.client` event (via `receive`)    | Yes    | Yes    |
-| Server unidirectional stream  | Server     | Return value of `send` for `webtransport.unidirectional.server` | No  | Yes    |
-| Server bidirectional stream   | Server     | Return value of `send` for `webtransport.bidirectional.server`  | Yes | Yes    |
+| Stream kind | Started by | How the application gets the callables | Available direction |
+| --- | --- | --- | --- |
+| Client unidirectional | Client | `webtransport.unidirectional.client` via `receive()` | Client to server |
+| Client bidirectional | Client | `webtransport.bidirectional.client` via `receive()` | Both directions |
+| Server unidirectional | Server | `(receiver, sender)` returned by `send()` for `webtransport.unidirectional.server` | Server to client |
+| Server bidirectional | Server | `(receiver, sender)` returned by `send()` for `webtransport.bidirectional.server` | Both directions |
 
-```text
-Client unidirectional:     Client ───────▶ Server        (application reads)
-Server unidirectional:     Server ───────▶ Client        (application writes)
-Bidirectional:             Client ◀──────▶ Server        (application reads and writes)
-```
+Each stream has its own receiver and sender. Closing or resetting a stream does not affect other streams or the session.
 
-Each stream has its own independent reader and/or writer. Closing or resetting one stream must not affect other streams or the session.
+## Stream receiver and sender callables
 
----
+`WebTransportStreamReceiveCallable` takes no arguments and returns one event from `WebTransportStreamReceiveEvents`. `WebTransportStreamSendCallable` accepts one event from `WebTransportStreamSendEvents` and returns `None`.
 
-# Reader and Writer
+The receiver follows the lifecycle rules of the session `receive` callable, and the sender follows the lifecycle rules of the session `send` callable. Receivers must deliver available events when called before the session is accepted. Calling a sender before acceptance must raise an error. After client disconnect, calling a sender must raise an exception; an `OSError` subclass is recommended. Applications should catch these exceptions, and servers should not log them as errors.
 
-RCP provides two abstract base classes, `Reader` and `Writer`.
+## `WebTransportDataReceived`
 
-```python
-from rcp import Reader, Writer
-```
-
-**RCP defines the interface only. The server must provide the implementation.** For every WebTransport stream, the server must create a concrete subclass of `Reader` and/or `Writer` built on top of its own QUIC/HTTP/3 stream handling and give it to the application.
-
-## `Writer`
-
-```python
-class Writer(ABC):
-    "Webtransport Stream Writer"
-
-    def __init__(self):
-        self._closed: bool = False
-
-    @property
-    def is_closed(self) -> bool:
-        return self._closed
-
-    @abstractmethod
-    async def write(self, event: WebTransportStreamWriteEvent) -> None:
-        """Write events to stream"""
-
-    @abstractmethod
-    async def close(self) -> None:
-        """Stop and close writing on stream"""
-```
-
-| Member              | Description                                                                     |
-| ------------------- | ------------------------------------------------------------------------------- |
-| `is_closed`         | `True` once the writer can no longer be written to.                             |
-| `write(event)`      | Sends a `WebTransportDataSend` event on the stream.                             |
-| `close()`           | Stops and closes writing on the stream.                                         |
-
-`write` accepts only `WebTransportDataSend` events:
-
-```python
-await writer.write(
-    {
-        "type": "webtransport.data.send",
-        "data": b"Hello",
-    }
-)
-```
-
-## `Reader`
-
-```python
-class Reader(ABC):
-    "Webtransport Stream Reader"
-
-    def __init__(self):
-        self._closed: bool = False
-
-    @property
-    def is_closed(self) -> bool:
-        return self._closed
-
-    @abstractmethod
-    async def read(self) -> WebTransportStreamReadEvent:
-        """read events from stream"""
-
-    @abstractmethod
-    async def close(self) -> None:
-        """Stop and close reading on stream"""
-```
-
-| Member              | Description                                                                     |
-| ------------------- | ------------------------------------------------------------------------------- |
-| `is_closed`         | `True` once the reader can no longer deliver data.                              |
-| `read()`            | Reads from the stream and returns a `WebTransportDataReceived` event.           |
-| `close()`           | Stops and closes reading on the stream.                                         |
-
-Read events have the form:
+Returned by the stream receiver when data arrives on the application's receiving direction.
 
 ```python
 {
     "type": "webtransport.data.received",
     "data": b"...",
+    "receiving_ended": False,
 }
 ```
 
-## The `is_closed` property
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.data.received"]` | Event type. |
+| `data` | `bytes` | Received stream data. |
+| `receiving_ended` | `bool`, optional | `True` when FIN has been received on the peer's sending direction, indicating no more data will arrive in this direction. |
 
-`is_closed` reflects the real state of the stream. The server **must** set the internal `_closed` flag to `True` when:
+## `WebTransportDataSend`
 
-* the application calls `close()` on the reader or writer,
-* the client finishes or resets its side of the stream,
-* the client disconnects,
-* the WebTransport session is closed or disconnected (`webtransport.close` / `webtransport.disconnect`),
-* the underlying QUIC connection is lost.
-
-Applications should check `is_closed` to find out whether a stream is still usable:
+Passed to the stream sender to send data on the application's sending direction.
 
 ```python
-while not reader.is_closed:
-    event = await reader.read()
-    ...
+{
+    "type": "webtransport.data.send",
+    "data": b"...",
+    "sending_ended": False,
+}
 ```
 
-Writing to or reading from a closed stream is an error and the server should raise an appropriate exception.
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.data.send"]` | Event type. |
+| `data` | `bytes` | Data to send on the stream. |
+| `sending_ended` | `bool`, optional | When `True`, the sender sets FIN on this sending direction to indicate that no more data will be sent. |
 
-WebTransport streams are handled within the application task started for the session. Applications should catch exceptions raised by `Reader` and `Writer` operations, as well as by stream handlers, at the stream boundary. Otherwise, an unhandled exception may propagate to the session application task, causing the server to potentially treat the stream error as a session-level error, cancel the task, and close the WebTransport session.
+## `WebTransportStreamDisconnected`
 
-## Event direction rules
+Returned by the stream receiver after the stream has terminated in both directions, or in the available direction of a unidirectional stream.
 
-* `WebTransportDataReceived` is emitted **only by stream readers**.
-* `WebTransportDataSend` is consumed **only by stream writers**.
-* Neither event is delivered through `receive` or accepted through `send`.
+```python
+{
+    "type": "webtransport.stream.disconnect",
+    "error_code": 0,
+}
+```
 
----
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.stream.disconnect"]` | Event type. |
+| `error_code` | `int`, optional | Application error code associated with stream termination. If omitted, the server reports `0`, meaning no error. |
 
-# Client-Initiated Streams
+## `WebTransportStreamClose`
 
-## `WebTransportClientUnidirectionalStreamStarted`
+Passed to the stream sender to request termination in both directions, or in the available direction of a unidirectional stream.
 
-Fires when the client starts a unidirectional stream. The server provides a **reader**.
+```python
+{
+    "type": "webtransport.stream.close",
+    "error_code": 0,
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.stream.close"]` | Event type. |
+| `error_code` | `int`, optional | Application error code to use when terminating/resetting the stream. If omitted, the server uses `0`, meaning no error. |
+
+## `WebTransportStreamStopReceive`
+
+Passed to the stream sender to request that the peer stop sending on the application's receiving direction.
+
+```python
+{
+    "type": "webtransport.stream.stop_receive",
+    "error_code": 0,
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.stream.stop_receive"]` | Event type. |
+| `error_code` | `int`, optional | Application error code to use when stopping the peer's sending direction. If omitted, the server uses `0`, meaning no error. |
+
+## `WebTransportStreamSendingStopped`
+
+Returned by the stream receiver when the client requests that sending stop on the application's sending direction.
+
+```python
+{
+    "type": "webtransport.stream.sending_stopped",
+    "error_code": 0,
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `type` | `Literal["webtransport.stream.sending_stopped"]` | Event type. |
+| `error_code` | `int`, optional | Application error code supplied by the client for stopping this direction. If omitted, the server reports `0`, meaning no error. |
+
+Applications may include `error_code` in `webtransport.stream.close` and `webtransport.stream.stop_receive` to supply the application error code used for the stream termination, reset, or stop. If a sender event omits `error_code`, the server must use `0`, meaning no error. The receiver reports the error code supplied by the peer in `webtransport.stream.disconnect` or `webtransport.stream.sending_stopped`; if the peer supplied no code, the server must report `0`.
+
+## Events allowed for each stream direction
+
+For a **client-initiated unidirectional stream**, the receiver may return `webtransport.data.received` and `webtransport.stream.disconnect`. It must not return `webtransport.stream.sending_stopped`, because the application has no sending direction on this stream. The sender accepts `webtransport.stream.close` and `webtransport.stream.stop_receive`. Both events close the only available direction of this unidirectional stream and are equivalent for it.
+
+For a **server-initiated unidirectional stream**, the receiver may return `webtransport.stream.disconnect` and `webtransport.stream.sending_stopped`. Both events indicate that the server-to-client sending direction has closed. The sender accepts `webtransport.data.send` and `webtransport.stream.close`; it must not accept `webtransport.stream.stop_receive`, because this stream has no server-side receiving direction.
+
+For a **bidirectional stream**, the receiver may return all three receive events: `webtransport.data.received`, `webtransport.stream.disconnect`, and `webtransport.stream.sending_stopped`. The sender accepts all three send events: `webtransport.data.send`, `webtransport.stream.close`, and `webtransport.stream.stop_receive`.
+
+## Client-Initiated Streams
+
+### `WebTransportClientUnidirectionalStreamStarted`
+
+Fires when the client starts a unidirectional stream. The event provides `receiver` and `sender` callables:
 
 ```python
 {
     "type": "webtransport.unidirectional.client",
-    "reader": reader,
+    "receiver": receiver,
+    "sender": sender,
 }
 ```
 
-| Field    | Description                                               |
-| -------- | --------------------------------------------------------- |
-| `type`   | Event type.                                               |
-| `reader` | A server-implemented `Reader` for data sent by the client. |
+The receiver delivers `webtransport.data.received` and `webtransport.stream.disconnect`. The sender accepts `webtransport.stream.close` and `webtransport.stream.stop_receive`; both close the only available direction.
 
-## `WebTransportClientBidirectionalStreamStarted`
+### `WebTransportClientBidirectionalStreamStarted`
 
-Fires when the client starts a bidirectional stream. The server provides a **reader and a writer**.
+Fires when the client starts a bidirectional stream and provides both callables:
 
 ```python
 {
     "type": "webtransport.bidirectional.client",
-    "reader": reader,
-    "writer": writer,
+    "receiver": receiver,
+    "sender": sender,
 }
 ```
 
-| Field    | Description                                                    |
-| -------- | -------------------------------------------------------------- |
-| `type`   | Event type.                                                    |
-| `reader` | A server-implemented `Reader` for data sent by the client.     |
-| `writer` | A server-implemented `Writer` for data sent to the client.     |
+The receiver returns the three receive-side events and the sender accepts the three send-side events listed above.
 
----
+## Server-Initiated Streams
 
-# Server-Initiated Streams
+The application creates a server-initiated stream by sending its create-stream event through the session `send` callable. The server starts the stream and returns `(receiver, sender)` in that order for every server-initiated stream, including unidirectional streams.
 
-The application can open streams toward the client at any time after the session is accepted, without any client request. It does this by sending a create-stream event. The server starts the stream and returns its usable endpoint or endpoints from `send`: a `Writer` for a unidirectional stream, or a `(Writer, Reader)` tuple for a bidirectional stream.
-
-## `WebTransportCreateServerUnidirectionalStream`
+### `WebTransportCreateServerUnidirectionalStream`
 
 ```python
-writer = await send(
-    {
-        "type": "webtransport.unidirectional.server",
-    }
-)
+receiver, sender = await send({"type": "webtransport.unidirectional.server"})
 ```
 
-When the server receives this event it must:
+The returned `(receiver, sender)` callables provide both stream endpoints. The receiver may return `webtransport.stream.disconnect` and `webtransport.stream.sending_stopped`. The sender accepts `webtransport.data.send` and `webtransport.stream.close`. It must not accept `webtransport.stream.stop_receive`, because the stream has no server-side receiving direction. Its receiver may return `webtransport.stream.disconnect` and `webtransport.stream.sending_stopped`; both indicate that the sending direction has closed.
 
-1. Open a new server-initiated **unidirectional** stream on the session.
-2. Create a `Writer` implementation on top of that stream.
-3. Return the `Writer` from `send`.
-4. Keep `writer.is_closed` accurate. In particular it must become `True` if the client disconnects, resets the stream, or the session ends.
-
-A unidirectional server stream has no reader.
-
-## `WebTransportCreateServerBidirectionalStream`
+### `WebTransportCreateServerBidirectionalStream`
 
 ```python
-writer, reader = await send(
-    {
-        "type": "webtransport.bidirectional.server",
-    }
-)
+receiver, sender = await send({"type": "webtransport.bidirectional.server"})
 ```
 
-When the server receives this event it must:
+The returned receiver and sender accept the full three-event receive and send sets for a bidirectional stream.
 
-1. Open a new server-initiated **bidirectional** stream on the session.
-2. Create a `Writer` and a `Reader` implementation on top of that stream.
-3. Return them from `send` as `(writer, reader)`, matching `tuple[Writer, Reader]` in `RCPSendCallable`.
-4. Keep `writer.is_closed` and `reader.is_closed` accurate. Both must become `True` if the client disconnects, resets the stream, or the session ends.
+## Stream and session lifecycle
+
+Stream receivers and senders share the lifecycle rules of the session `receive` and `send` callables, respectively. A receiver must deliver available stream events when called before the session is accepted. A sender called before acceptance must raise an error. After client disconnect, calling a sender must raise an `OSError` or subclass. The application should catch this exception, and the server should not log it as an error. A stream ending or resetting closes that stream's callables without affecting other streams or the session. Closing or disconnecting the session closes all of its streams.
+
+Errors raised by a stream receiver or sender are specific to that stream. Stream handlers run within the task used for the `RCPApplication` session, so an unhandled stream error can propagate to the application task. A server may mistake it for a session-level error and end the task, which can close the entire WebTransport session. Applications should catch stream operation errors at the stream handler boundary and handle them without letting them escape into the session task.
 
 ---
-
 # WebTransport Extension
 
 RCP provides the `WEBTRANSPORT_EXTENSION` constant:
@@ -1264,7 +1260,7 @@ WEBTRANSPORT_EXTENSION = {
 
 ## Purpose
 
-The extension is intended for **servers that are not RCP servers but support the RCP WebTransport implementation**. Such a server advertises through the `extensions` field of its scope that applications may use RCP's WebTransport events, readers, and writers. Native RCP 2.0 servers expose WebTransport through the `webtransport` scope instead and do not need the extension.
+The extension is intended for **servers that are not RCP servers but support the RCP WebTransport implementation**. Such a server advertises through the `extensions` field of its scope that applications may use RCP's WebTransport events, receivers, and senders. Native RCP 2.0 servers expose WebTransport through the `webtransport` scope instead and do not need the extension.
 
 ```python
 scope["extensions"] = {
@@ -1290,13 +1286,13 @@ if extension and extension["features"]["datagrams"]:
     ...
 ```
 
-A server must only set a feature to `True` when it actually supports it, and must follow every rule in this document for the features it advertises (including server-implemented readers and writers).
+A server must only set a feature to `True` when it actually supports it, and must follow every rule in this document for the features it advertises (including server-provided receiver and sender callables).
 
 An application must treat any feature field missing from the `features` mapping as `False`.
 
 A server may advertise support for any subset of the three features. An application must not use a feature the server has not advertised.
 
-If the application attempts to use an unsupported stream feature, the server must raise an error, close the session, and close all streams associated with that session. The application must handle the error at the stream boundary, as described in [Reader and Writer](#reader-and-writer).
+If the application attempts to use an unsupported stream feature, the server must raise an error, close the session, and close all streams associated with that session. The application must handle the error at the stream boundary, as described in [stream receiver and sender callables](#stream-receiver-and-sender-callables).
 
 A server must include `scope["datagram_callables"]` exactly when it supports datagrams. When `WEBTRANSPORT_EXTENSION` is used, the field must be present if `features["datagrams"]` is `True` and absent if that feature is `False` or missing. A mismatch is a server error and must be raised.
 
@@ -1340,16 +1336,16 @@ async def app(scope, receive, send):
 ```python
 import asyncio
 
-async def echo(reader, writer):
-    while not reader.is_closed and not writer.is_closed:
-        event = await reader.read()
-        await writer.write(
+async def echo(receiver, sender):
+    while True:
+        event = await receiver()
+        await sender(
             {
                 "type": "webtransport.data.send",
                 "data": event["data"],
             }
         )
-    await writer.close()
+    await sender({"type": "webtransport.stream.close", "error_code": 0})
 
 
 async def app(scope, receive, send):
@@ -1358,20 +1354,20 @@ async def app(scope, receive, send):
 
     await send({"type": "webtransport.accept"})
 
-    # Server-initiated unidirectional stream: send returns the Writer.
-    writer = await send(
+     # Server-initiated streams return (receiver, sender).
+    receiver, sender = await send(
         {"type": "webtransport.unidirectional.server"}
     )
-    await writer.write(
+    await sender(
         {"type": "webtransport.data.send", "data": b"welcome"}
     )
-    await writer.close()
+    await sender({"type": "webtransport.stream.close", "error_code": 0})
 
     while True:
         event = await receive()
 
         if event["type"] == "webtransport.bidirectional.client":
-            asyncio.create_task(echo(event["reader"], event["writer"]))
+            asyncio.create_task(echo(event["receiver"], event["sender"]))
 
         elif event["type"] == "webtransport.disconnect":
             return
@@ -1381,7 +1377,7 @@ async def app(scope, receive, send):
 
 # WebTransport Error Codes
 
-The current WebTransport draft does not define an error-code mapping. Servers must provide their own mapping.
+The current WebTransport draft does not define an error-code mapping. Applications must define and use their own mapping between application errors and WebTransport error codes. When an application omits an error code, the server must use `0` to indicate that there was no error. When the peer omits a code reported by a receive-side stream event, the server must report `0` as well.
 
 ---
 
@@ -1606,18 +1602,18 @@ A server that implements RCP 2.0 WebTransport must additionally:
 6. Wait for `webtransport.accept` or `webtransport.reject` before completing or refusing the handshake.
 7. Continue delivering available events through `receive()` and available datagrams through the datagram receive callable before acceptance; if the session closes while `receive()` is waiting, deliver `webtransport.disconnect`.
 8. Before acceptance, accept only `webtransport.accept` or `webtransport.reject` through `send()`. Raise an error for other events, a second accept, or any event sent after rejection.
-9. Permit stream readers to be used before acceptance, but reject stream writer use until acceptance. Apply the same lifecycle restrictions as `receive()` and `send()` while respecting each reader or writer's allowed event types.
+9. Permit stream receivers to deliver available events before acceptance, but reject stream sender calls until acceptance. Apply the same lifecycle rules as `receive()` and `send()` while respecting the events allowed for each stream direction.
 10. Provide `scope["datagram_callables"]` only when datagrams are supported. When `WEBTRANSPORT_EXTENSION` is used, include the tuple exactly when `features["datagrams"]` is `True`; if the feature is `False` or missing, omit it. Raise an error if the field and advertised feature disagree.
 11. Deliver available datagrams through the datagram receive callable whenever it is awaited, including before session acceptance. Return only `webtransport.datagram.received` from that callable.
 12. Accept only `webtransport.datagram.send` on the datagram send callable; raise an error if it is used before session acceptance.
 13. Deliver client-initiated streams through `webtransport.unidirectional.client` and `webtransport.bidirectional.client`.
-14. Implement `Reader` and `Writer` for every WebTransport stream on top of its own stream handling.
-15. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return its `Writer` from `send`.
-16. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return its `(Writer, Reader)` from `send`.
-17. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
-18. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
+14. Provide receiver and sender callables for every WebTransport stream on top of its own stream handling.
+15. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return `(receiver, sender)` from `send`.
+16. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return `(receiver, sender)` from `send`.
+17. Close the stream receiver and sender callables when the client disconnects, the stream ends or is reset, or the session ends.
+18. Emit `WebTransportDataReceived` only from stream receivers and accept `WebTransportDataSend` only on stream senders.
 19. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
-20. Raise an exception if the application calls `send()`, the datagram send callable, or `Writer.write()` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
+20. Raise an exception if the application calls `send()`, the datagram send callable, or `stream sender` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
 21. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
 22. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
 
@@ -1647,10 +1643,10 @@ A WebTransport application (RCP 2.0) should additionally:
 * Send only `webtransport.accept` or `webtransport.reject` before acceptance; accept once, and return after rejection.
 * Handle `webtransport.disconnect` and stop processing the session.
 * Handle server errors from sending or writing after the connection or session has closed.
-* Use the `Reader` and `Writer` objects provided by the server, and never implement or substitute its own.
-* Use the return value of `send` when creating server-initiated streams: a `Writer` for unidirectional streams and `(Writer, Reader)` for bidirectional streams.
-* Check `is_closed` before reading from or writing to a stream.
-* Close readers and writers when finished with them.
+* Use the stream receiver and sender callables provided by the server.
+* Use the `(receiver, sender)` tuple returned by `send` when creating any server-initiated stream.
+* Call the receiver and sender only while their stream directions are open.
+* Close receivers and senders when finished with them.
 * Check `scope["extensions"]["webtransport"]` when running on a non-RCP server.
 
 ---
@@ -1767,7 +1763,7 @@ For example:
 
 ```text
 RCP protocol version: 1.0 / 2.0
-Python package release: 2.0.7
+Python package release: 2.0.8
 ```
 
 ---
@@ -1800,7 +1796,7 @@ RCP 2.0 includes everything in RCP 1.0 and adds WebTransport:
 * WebTransport datagrams
 * Client-initiated and server-initiated unidirectional streams
 * Client-initiated and server-initiated bidirectional streams
-* Server-implemented stream `Reader` and `Writer` interfaces
+* Server-provided stream receiver and sender callables
 * `is_closed` stream state tracking
 * The `WEBTRANSPORT_EXTENSION` for non-RCP servers
 
