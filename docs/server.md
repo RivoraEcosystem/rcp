@@ -50,7 +50,7 @@ A server that implements RCP 2.0 WebTransport must additionally:
 17. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
 18. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
 19. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
-20. Raise an exception if the application calls `send()` or `Writer.write()` after the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
+20. Raise an exception if the application calls `send()`, the datagram send callable, or `Writer.write()` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
 21. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
 22. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
 

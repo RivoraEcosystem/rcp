@@ -41,7 +41,7 @@ classifiers = [
 Homepage = "https://github.com/RivoraEcosystem/rcp"
 Repository = "https://github.com/RivoraEcosystem/rcp"
 Issues = "https://github.com/RivoraEcosystem/rcp/issues"
-Documentation = "https://rcp.bhavyamalhotra.in/"
+Documentation = "https://rcp.readthedocs.io/"
 Changelog = "https://github.com/RivoraEcosystem/rcp/blob/main/CHANGELOG.md"
 
 [tool.setuptools]

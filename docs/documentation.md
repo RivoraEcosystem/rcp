@@ -968,7 +968,7 @@ The server uses this event to communicate termination rather than arbitrarily ca
 
 Whenever a WebTransport session closes, the server must deliver `webtransport.disconnect` to the application. If the application is still waiting in `receive()`, that call must return the disconnect event.
 
-After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If it continues to call `send()` or `Writer.write()`, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
+After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If the client disconnects and the application continues to call `send()`, `Writer.write()`, or the datagram send callable, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
 
 ---
 
@@ -1017,7 +1017,9 @@ The receive callable follows the lifecycle rules of `receive()`. The server must
 
 The send callable follows the lifecycle rules of `send()`. Sending before the session is accepted is an error, and the server must raise it.
 
-The application continues to receive `webtransport.disconnect` through the general `receive()` callable. The datagram receive callable must not return that event. After disconnect or rejection, the application must stop datagram operations. If it attempts another datagram send, the server must raise an error.
+The application continues to receive `webtransport.disconnect` through the general `receive()` callable. The datagram receive callable must not return that event.
+
+After the client disconnects or the session is rejected, the application must stop datagram operations. If it calls the datagram send callable after the client disconnects, the server must raise an exception. A subclass of `OSError` is recommended but not required; the server should catch it without logging it as an error, following the rule for `send()` and `Writer.write()` above.
 
 Datagrams are unreliable and unordered. The server may drop a datagram it cannot deliver.
 
@@ -1615,7 +1617,7 @@ A server that implements RCP 2.0 WebTransport must additionally:
 17. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
 18. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
 19. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
-20. Raise an exception if the application calls `send()` or `Writer.write()` after the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
+20. Raise an exception if the application calls `send()`, the datagram send callable, or `Writer.write()` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
 21. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
 22. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
 
