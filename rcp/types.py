@@ -72,6 +72,14 @@ class WebTransportDataEventType(StrEnum):
     SEND = "webtransport.data.send"
 
 
+# WebTransport stream termination and direction-control events.
+class WebTransportStreamTerminationEventType(StrEnum):
+    CLOSE = "webtransport.stream.close"
+    DISCONNECT = "webtransport.stream.disconnect"
+    STOP_RECEIVE = "webtransport.stream.stop_receive"
+    SENDING_STOPPED = "webtransport.stream.sending_stopped"
+
+
 # HTTP protocol versions used by RCP.
 class HTTPVersions(StrEnum):
     HTTP3 = "3"

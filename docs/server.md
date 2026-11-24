@@ -39,18 +39,18 @@ A server that implements RCP 2.0 WebTransport must additionally:
 6. Wait for `webtransport.accept` or `webtransport.reject` before completing or refusing the handshake.
 7. Continue delivering available events through `receive()` and available datagrams through the datagram receive callable before acceptance; if the session closes while `receive()` is waiting, deliver `webtransport.disconnect`.
 8. Before acceptance, accept only `webtransport.accept` or `webtransport.reject` through `send()`. Raise an error for other events, a second accept, or any event sent after rejection.
-9. Permit stream readers to be used before acceptance, but reject stream writer use until acceptance. Apply the same lifecycle restrictions as `receive()` and `send()` while respecting each reader or writer's allowed event types.
+9. Permit stream receiver callables to be used before acceptance and deliver available events. Reject stream sender calls until acceptance. Apply the same lifecycle restrictions as `receive()` and `send()` while respecting each stream direction's allowed event types.
 10. Provide `scope["datagram_callables"]` only when datagrams are supported. When `WEBTRANSPORT_EXTENSION` is used, include the tuple exactly when `features["datagrams"]` is `True`; if the feature is `False` or missing, omit it. Raise an error if the field and advertised feature disagree.
 11. Deliver available datagrams through the datagram receive callable whenever it is awaited, including before session acceptance. Return only `webtransport.datagram.received` from that callable.
 12. Accept only `webtransport.datagram.send` on the datagram send callable; raise an error if it is used before session acceptance.
 13. Deliver client-initiated streams through `webtransport.unidirectional.client` and `webtransport.bidirectional.client`.
-14. Implement `Reader` and `Writer` for every WebTransport stream on top of its own stream handling.
-15. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return its `Writer` from `send`.
-16. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return its `(Writer, Reader)` from `send`.
-17. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
-18. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
+14. Provide receiver and sender callables for every WebTransport stream on top of its own stream handling.
+15. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return its `(receiver, sender)` tuple from `send`.
+16. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return its `(receiver, sender)` callable tuple from `send`.
+17. Close stream receiver and sender callables when the client disconnects, the stream ends or is reset, or the session ends.
+18. Emit `WebTransportDataReceived` only from receiver callables and accept `WebTransportDataSend` only on sender callables.
 19. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
-20. Raise an exception if the application calls `send()`, the datagram send callable, or `Writer.write()` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
+20. Raise an exception if the application calls `send()`, the datagram send callable, or a stream sender after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
 21. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
 22. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
 

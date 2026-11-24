@@ -95,7 +95,7 @@ For example:
 
 ```text
 RCP protocol version: 1.0 / 2.0
-Python package release: 2.0.7
+Python package release: 2.0.8
 ```
 
 ---
@@ -128,7 +128,7 @@ RCP 2.0 includes everything in RCP 1.0 and adds WebTransport:
 * WebTransport datagrams
 * Client-initiated and server-initiated unidirectional streams
 * Client-initiated and server-initiated bidirectional streams
-* Server-implemented stream `Reader` and `Writer` interfaces
+* Server-provided stream receiver and sender callables
 * `is_closed` stream state tracking
 * The `WEBTRANSPORT_EXTENSION` for non-RCP servers
 

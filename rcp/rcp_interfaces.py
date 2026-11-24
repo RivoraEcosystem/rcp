@@ -27,7 +27,10 @@ from .webtransport.webtransport_event import (
     WebTransportSessionDisconnect,
     WebTransportSessionReject,
 )
-from .webtransport.webtransport_stream_utils import Reader, Writer
+from .webtransport.webtransport_stream_utils import (
+    WebTransportStreamReceiveCallable,
+    WebTransportStreamSendCallable,
+)
 
 Scope = HTTPScope | LifespanScope | WebTransportScope
 
@@ -70,7 +73,10 @@ RCPSendEvent = HTTPSendEvents | LifespanSendEvents | WebtransportSendEvent
 
 RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
 RCPSendCallable = Callable[
-    [RCPSendEvent], Awaitable[None | Writer | tuple[Writer, Reader]]
+    [RCPSendEvent],
+    Awaitable[
+        None | tuple[WebTransportStreamReceiveCallable, WebTransportStreamSendCallable]
+    ],
 ]
 
 RCPApplication = Callable[[Scope, RCPReceiveCallable, RCPSendCallable], Awaitable[None]]

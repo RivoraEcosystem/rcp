@@ -8,11 +8,15 @@ from ..types import (
     WebTransportConnectionEventType,
     WebTransportDataEventType,
     WebTransportDatagramEventType,
+    WebTransportStreamTerminationEventType,
     WebTransportUnidirectionalStreamEventType,
 )
 
 if TYPE_CHECKING:
-    from .webtransport_stream_utils import Reader, Writer
+    from .webtransport_stream_utils import (
+        WebTransportStreamReceiveCallable,
+        WebTransportStreamSendCallable,
+    )
 
 
 Headers = Iterable[tuple[bytes, bytes]]
@@ -57,16 +61,17 @@ class WebTransportSessionDisconnect(TypedDict):
 class WebTransportClientUnidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated unidirectional stream starts.
 
-    Provides a reader for receiving data in events from the client.
+    Provides a receiver and sender for receiving data in events from the client.
     """
 
     type: Literal[WebTransportUnidirectionalStreamEventType.CLIENT]
-    reader: Reader
+    receiver: WebTransportStreamReceiveCallable
+    sender: WebTransportStreamSendCallable
 
 
 class WebTransportCreateServerUnidirectionalStream(TypedDict):
     """Requests the creation of a server-initiated unidirectional
-    stream and provides a writer for sending data in events to the client
+    stream and provides a (receiver,sender) tuple for sending data in events to the client
     without requiring a client request.
     """
 
@@ -79,45 +84,21 @@ class WebTransportCreateServerUnidirectionalStream(TypedDict):
 class WebTransportClientBidirectionalStreamStarted(TypedDict):
     """Fires when a client-initiated bidirectional stream starts.
 
-    Provides a reader and a writer for receiving and sending data in events.
+    Provides a receiver and a sender for receiving and sending data in events.
     """
 
     type: Literal[WebTransportBidirectionalStreamEventType.CLIENT]
-    reader: Reader
-    writer: Writer
+    receiver: WebTransportStreamReceiveCallable
+    sender: WebTransportStreamSendCallable
 
 
 class WebTransportCreateServerBidirectionalStream(TypedDict):
     """Requests the creation of a server-initiated bidirectional
-    stream and provides a reader and a writer for receiving and
+    stream and provides a (receiver,sender) tuple for receiving and
     sending data in events.
     """
 
     type: Literal[WebTransportBidirectionalStreamEventType.SERVER]
-
-
-# WebTransport stream data events
-
-
-class WebTransportDataReceived(TypedDict):
-    """Fires when data is received from the client on a stream.
-
-    Must be emitted only by stream readers.
-    """
-
-    type: Literal[WebTransportDataEventType.RECEIVED]
-    data: bytes
-
-
-class WebTransportDataSend(TypedDict):
-    """Fires when the application requests that data be sent
-    to the client on a server-writable stream.
-
-    Must be emitted only by stream writers.
-    """
-
-    type: Literal[WebTransportDataEventType.SEND]
-    data: bytes
 
 
 # WebTransport datagram events
@@ -139,6 +120,72 @@ class WebTransportDatagramSend(TypedDict):
     data: bytes
 
 
-WebTransportStreamReadEvent = WebTransportDataReceived
+# WebTransport stream data events
 
-WebTransportStreamWriteEvent = WebTransportDataSend
+
+class WebTransportDataReceived(TypedDict):
+    """Fires when data is received from the client on a stream.
+
+    Must be emitted only by stream receivers.
+    """
+
+    type: Literal[WebTransportDataEventType.RECEIVED]
+    data: bytes
+    receiving_ended: NotRequired[bool]
+
+
+class WebTransportDataSend(TypedDict):
+    """Fires when the application requests that data be sent
+    to the client on a server-writable stream.
+
+    Must be emitted only by stream senders.
+    """
+
+    type: Literal[WebTransportDataEventType.SEND]
+    data: bytes
+    sending_ended: NotRequired[bool]
+
+
+# WebTransport stream termination and direction-control events
+
+
+class WebTransportStreamDisconnected(TypedDict):
+    """Fires when the stream has been terminated in both directions, or in its
+    available direction for a unidirectional stream.
+
+    The error code is 0 when termination had no error.
+    """
+
+    type: Literal[WebTransportStreamTerminationEventType.DISCONNECT]
+    error_code: NotRequired[int]
+
+
+class WebTransportStreamClose(TypedDict):
+    """Requests termination of the stream in both directions, or in its
+    available direction for a unidirectional stream.
+
+    The error code is 0 when termination has no error.
+    """
+
+    type: Literal[WebTransportStreamTerminationEventType.CLOSE]
+    error_code: NotRequired[int]
+
+
+class WebTransportStreamStopReceive(TypedDict):
+    """Requests sending to stop on the application's receiving side.
+
+    The error code is 0 when stopping has no error.
+    """
+
+    type: Literal[WebTransportStreamTerminationEventType.STOP_RECEIVE]
+    error_code: NotRequired[int]
+
+
+class WebTransportStreamSendingStopped(TypedDict):
+    """Fires when the client requested stopping on the application's sending side.
+
+    The error code is 0 when stopping had no error.
+    """
+
+    type: Literal[WebTransportStreamTerminationEventType.SENDING_STOPPED]
+    error_code: NotRequired[int]

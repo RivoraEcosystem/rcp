@@ -49,6 +49,7 @@ from .types import (
     WebTransportConnectionEventType,
     WebTransportDataEventType,
     WebTransportDatagramEventType,
+    WebTransportStreamTerminationEventType,
     WebTransportUnidirectionalStreamEventType,
 )
 from .webtransport.webtransport_datagram_utils import (
@@ -70,11 +71,18 @@ from .webtransport.webtransport_event import (
     WebTransportSessionClose,
     WebTransportSessionDisconnect,
     WebTransportSessionReject,
-    WebTransportStreamReadEvent,
-    WebTransportStreamWriteEvent,
+    WebTransportStreamClose,
+    WebTransportStreamDisconnected,
+    WebTransportStreamSendingStopped,
+    WebTransportStreamStopReceive,
 )
 from .webtransport.webtransport_extension import WEBTRANSPORT_EXTENSION
-from .webtransport.webtransport_stream_utils import Reader, Writer
+from .webtransport.webtransport_stream_utils import (
+    WebTransportStreamReceiveCallable,
+    WebTransportStreamReceiveEvents,
+    WebTransportStreamSendCallable,
+    WebTransportStreamSendEvents,
+)
 
 __all__ = [
     "H3_EXTENSION_PSEUDO_HEADERS",
@@ -113,7 +121,6 @@ __all__ = [
     "RCPSendCallable",
     "RCPSendEvent",
     "RCPVersions",
-    "Reader",
     "RequestMethod",
     "Scope",
     "ScopeType",
@@ -138,12 +145,20 @@ __all__ = [
     "WebTransportSessionClose",
     "WebTransportSessionDisconnect",
     "WebTransportSessionReject",
+    "WebTransportStreamClose",
+    "WebTransportStreamDisconnected",
     "WebTransportStreamReadEvent",
+    "WebTransportStreamReceiveCallable",
+    "WebTransportStreamReceiveEvents",
+    "WebTransportStreamSendCallable",
+    "WebTransportStreamSendEvents",
+    "WebTransportStreamSendingStopped",
+    "WebTransportStreamStopReceive",
+    "WebTransportStreamTerminationEventType",
     "WebTransportStreamWriteEvent",
     "WebTransportUnidirectionalStreamEventType",
     "WebtransportReceiveEvent",
     "WebtransportSendEvent",
-    "Writer",
 ]
 
-__version__ = "2.0.7"
+__version__ = "2.0.8"
