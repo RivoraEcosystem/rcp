@@ -23,7 +23,7 @@ from .lifespan.events import (
 )
 from .methods import RequestMethod
 from .rcp import RCP, RCPVersions
-from .rcp_app import (
+from .rcp_interfaces import (
     HTTPReceiveEvents,
     HTTPSendEvents,
     LifespanReceiveEvents,
@@ -50,6 +50,12 @@ from .types import (
     WebTransportDataEventType,
     WebTransportDatagramEventType,
     WebTransportUnidirectionalStreamEventType,
+)
+from .webtransport.webtransport_datagram_utils import (
+    WebTransportDatagramReceiveCallable,
+    WebTransportDatagramReceiveEvents,
+    WebTransportDatagramSendCallable,
+    WebTransportDatagramSendEvents,
 )
 from .webtransport.webtransport_event import (
     WebTransportClientBidirectionalStreamStarted,
@@ -121,8 +127,12 @@ __all__ = [
     "WebTransportDataReceived",
     "WebTransportDataSend",
     "WebTransportDatagramEventType",
+    "WebTransportDatagramReceiveCallable",
+    "WebTransportDatagramReceiveEvents",
     "WebTransportDatagramReceived",
     "WebTransportDatagramSend",
+    "WebTransportDatagramSendCallable",
+    "WebTransportDatagramSendEvents",
     "WebTransportScope",
     "WebTransportSessionAccept",
     "WebTransportSessionClose",

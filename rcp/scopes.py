@@ -7,6 +7,10 @@ from .methods import RequestMethod
 from .rcp import RCP
 from .scheme import HTTPScheme
 from .types import HTTPVersions, ScopeType
+from .webtransport.webtransport_datagram_utils import (
+    WebTransportDatagramReceiveCallable,
+    WebTransportDatagramSendCallable,
+)
 
 Headers = Iterable[tuple[bytes, bytes]]
 
@@ -51,3 +55,6 @@ class WebTransportScope(TypedDict):
     server: tuple[str, int | None] | None
     state: NotRequired[dict[str, Any]]
     extensions: NotRequired[dict[str, dict[object, object]]]
+    datagram_callables: NotRequired[
+        tuple[WebTransportDatagramReceiveCallable, WebTransportDatagramSendCallable]
+    ]

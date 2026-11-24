@@ -67,7 +67,7 @@ event = await receive()
 
 For HTTP connections, the application can receive request body events and disconnect events.
 
-For WebTransport sessions (RCP 2.0), the application can receive datagrams, client-started streams, and session disconnect events.
+For WebTransport sessions (RCP 2.0), the application can receive client-started streams and session disconnect events through `receive()`. Datagrams use the dedicated `datagram_callables` pair in `WebTransportScope`; they are not sent through `receive()` or `send()`.
 
 The server must continue delivering available WebTransport receive events when the application calls `receive()`, including before the session is accepted. If the session closes while `receive()` is waiting, the server must return `webtransport.disconnect`.
 

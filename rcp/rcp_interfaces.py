@@ -22,8 +22,6 @@ from .webtransport.webtransport_event import (
     WebTransportClientUnidirectionalStreamStarted,
     WebTransportCreateServerBidirectionalStream,
     WebTransportCreateServerUnidirectionalStream,
-    WebTransportDatagramReceived,
-    WebTransportDatagramSend,
     WebTransportSessionAccept,
     WebTransportSessionClose,
     WebTransportSessionDisconnect,
@@ -53,15 +51,13 @@ HTTPSendEvents = (
 )
 
 WebtransportReceiveEvent = (
-    WebTransportDatagramReceived
-    | WebTransportClientBidirectionalStreamStarted
+    WebTransportClientBidirectionalStreamStarted
     | WebTransportClientUnidirectionalStreamStarted
     | WebTransportSessionDisconnect
 )
 
 WebtransportSendEvent = (
-    WebTransportDatagramSend
-    | WebTransportCreateServerBidirectionalStream
+    WebTransportCreateServerBidirectionalStream
     | WebTransportCreateServerUnidirectionalStream
     | WebTransportSessionClose
     | WebTransportSessionReject
