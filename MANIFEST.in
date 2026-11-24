@@ -1,3 +1,7 @@
+include README.md
+include LICENSE
+recursive-include rcp *.py
+
 prune rcpenv
 prune .env
 prune dev_logs

@@ -182,7 +182,7 @@ event = await receive()
 
 For HTTP connections, the application can receive request body events and disconnect events.
 
-For WebTransport sessions (RCP 2.0), the application can receive datagrams, client-started streams, and session disconnect events.
+For WebTransport sessions (RCP 2.0), the application can receive client-started streams and session disconnect events through `receive()`. Datagrams use the dedicated `datagram_callables` pair in `WebTransportScope`; they are not sent through `receive()` or `send()`.
 
 For lifespan, the application receives startup and shutdown events.
 
@@ -318,6 +318,9 @@ class WebTransportScope(TypedDict):
 
     state: NotRequired[dict[str, Any]]
     extensions: NotRequired[dict[str, dict[object, object]]]
+    datagram_callables: NotRequired[
+        tuple[WebTransportDatagramReceiveCallable, WebTransportDatagramSendCallable]
+    ]
 ```
 
 ### Fields
@@ -339,6 +342,7 @@ class WebTransportScope(TypedDict):
 | `server`       | Server address and port, when available.                                    |
 | `state`        | Session/application state (a copy of the lifespan state).                   |
 | `extensions`   | Optional protocol extensions.                                               |
+| `datagram_callables` | Optional tuple of datagram receive and send callables, present only when datagrams are supported. |
 
 The `:protocol` pseudo-header of the Extended CONNECT request (`webtransport`) is consumed by the server to select the WebTransport scope and must not appear in `scope["headers"]`.
 
@@ -829,14 +833,12 @@ Events exchanged through `receive` and `send`:
 
 | Direction                | Event                                              | Type string                            |
 | ------------------------ | -------------------------------------------------- | -------------------------------------- |
-| Server → Application     | `WebTransportDatagramReceived`                     | `webtransport.datagram.received`       |
 | Server → Application     | `WebTransportClientUnidirectionalStreamStarted`    | `webtransport.unidirectional.client`   |
 | Server → Application     | `WebTransportClientBidirectionalStreamStarted`     | `webtransport.bidirectional.client`    |
 | Server → Application     | `WebTransportSessionDisconnect`                    | `webtransport.disconnect`              |
 | Application → Server     | `WebTransportSessionAccept`                        | `webtransport.accept`                  |
 | Application → Server     | `WebTransportSessionReject`                        | `webtransport.reject`                  |
 | Application → Server     | `WebTransportSessionClose`                         | `webtransport.close`                   |
-| Application → Server     | `WebTransportDatagramSend`                         | `webtransport.datagram.send`           |
 | Application → Server     | `WebTransportCreateServerUnidirectionalStream`     | `webtransport.unidirectional.server`   |
 | Application → Server     | `WebTransportCreateServerBidirectionalStream`      | `webtransport.bidirectional.server`    |
 
@@ -851,15 +853,13 @@ The corresponding type aliases are:
 
 ```python
 WebtransportReceiveEvent = (
-    WebTransportDatagramReceived
-    | WebTransportClientBidirectionalStreamStarted
+    WebTransportClientBidirectionalStreamStarted
     | WebTransportClientUnidirectionalStreamStarted
     | WebTransportSessionDisconnect
 )
 
 WebtransportSendEvent = (
-    WebTransportDatagramSend
-    | WebTransportCreateServerBidirectionalStream
+    WebTransportCreateServerBidirectionalStream
     | WebTransportCreateServerUnidirectionalStream
     | WebTransportSessionClose
     | WebTransportSessionReject
@@ -896,7 +896,11 @@ The server completes the WebTransport handshake when it receives this event. Res
 
 ### Receive and send before acceptance
 
-Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event before acceptance. The application may call `receive()` before acceptance, and the server must continue delivering available receive events. Client stream readers may be used before acceptance, but stream writers may not; readers follow the same lifecycle rules as `receive()`, and writers follow the same rules as `send()`, subject to the event types each interface allows.
+Before acceptance, the application may send only `webtransport.accept` or `webtransport.reject`. The server must raise an error if it receives any other event through `send()`.
+
+The application may call `receive()` before acceptance. The server must continue delivering available receive events. Client stream readers may also be used before acceptance, but stream writers may not.
+
+Datagram receive callables follow the receive lifecycle and must deliver available datagrams when called, including before session acceptance. Datagram send callables follow the send lifecycle and must raise an error if used before acceptance.
 
 `webtransport.accept` may be sent only once. A second accept is a protocol violation and the server must raise an error.
 
@@ -964,7 +968,7 @@ The server uses this event to communicate termination rather than arbitrarily ca
 
 Whenever a WebTransport session closes, the server must deliver `webtransport.disconnect` to the application. If the application is still waiting in `receive()`, that call must return the disconnect event.
 
-After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If it continues to call `send()` or `Writer.write()`, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
+After `webtransport.disconnect` has been delivered, the session is closed and the application should stop sending events or writing to stream writers. If the client disconnects and the application continues to call `send()`, `Writer.write()`, or the datagram send callable, the server must raise an exception. A subclass of `OSError` is recommended but not required. Applications should handle this exception; servers must be prepared to catch it and must not log it as an error.
 
 ---
 
@@ -972,7 +976,9 @@ After `webtransport.disconnect` has been delivered, the session is closed and th
 
 ## `WebTransportDatagramReceived`
 
-Sent by the server when a datagram arrives from the client.
+Returned by the datagram receive callable when a datagram arrives from the client.
+
+Datagram events are exchanged only through `WebTransportScope.datagram_callables`. They are not exchanged through the general `receive()` or `send()` callables.
 
 ```python
 {
@@ -983,16 +989,37 @@ Sent by the server when a datagram arrives from the client.
 
 ## `WebTransportDatagramSend`
 
-Sent by the application to send a datagram to the client.
+Passed to the datagram send callable to send a datagram to the client.
 
 ```python
-await send(
-    {
-        "type": "webtransport.datagram.send",
-        "data": b"...",
-    }
-)
+await datagram_send({"type": "webtransport.datagram.send", "data": b"..."})
 ```
+
+`WebTransportScope.datagram_callables` is an optional tuple:
+
+```python
+datagram_receive, datagram_send = scope["datagram_callables"]
+```
+
+The receive callable comes first, followed by the send callable. The server must include the field only when it supports datagrams.
+
+When `WEBTRANSPORT_EXTENSION` advertises datagram support, the field must be present if `features["datagrams"]` is `True`. It must be absent if that feature is `False` or missing. A mismatch is a server error and must be raised.
+
+#### Callable event types
+
+The datagram receive callable takes no arguments and returns only `WebTransportDatagramReceived`.
+
+The datagram send callable accepts only `WebTransportDatagramSend` and returns `None`. Neither callable may handle other event types.
+
+#### Datagram lifecycle
+
+The receive callable follows the lifecycle rules of `receive()`. The server must deliver available datagrams whenever it is awaited, including before the session is accepted.
+
+The send callable follows the lifecycle rules of `send()`. Sending before the session is accepted is an error, and the server must raise it.
+
+The application continues to receive `webtransport.disconnect` through the general `receive()` callable. The datagram receive callable must not return that event.
+
+After the client disconnects or the session is rejected, the application must stop datagram operations. If it calls the datagram send callable after the client disconnects, the server must raise an exception. A subclass of `OSError` is recommended but not required; the server should catch it without logging it as an error, following the rule for `send()` and `Writer.write()` above.
 
 Datagrams are unreliable and unordered. The server may drop a datagram it cannot deliver.
 
@@ -1267,7 +1294,13 @@ A server must only set a feature to `True` when it actually supports it, and mus
 
 An application must treat any feature field missing from the `features` mapping as `False`.
 
-A server may advertise support for any subset of the three features. An application must not use a feature the server has not advertised. If the application attempts to use an unsupported stream feature, the server must raise an error, close the session, and close all streams associated with that session. The application must handle the error at the stream boundary, as described in [Reader and Writer](#reader-and-writer). If the application sends a datagram when datagram support was not advertised, the server must raise an error, close the session, and close all streams associated with that session.
+A server may advertise support for any subset of the three features. An application must not use a feature the server has not advertised.
+
+If the application attempts to use an unsupported stream feature, the server must raise an error, close the session, and close all streams associated with that session. The application must handle the error at the stream boundary, as described in [Reader and Writer](#reader-and-writer).
+
+A server must include `scope["datagram_callables"]` exactly when it supports datagrams. When `WEBTRANSPORT_EXTENSION` is used, the field must be present if `features["datagrams"]` is `True` and absent if that feature is `False` or missing. A mismatch is a server error and must be raised.
+
+If the application attempts to send a datagram when support was not advertised, the server must raise an error and close the session and its streams.
 
 ---
 
@@ -1276,25 +1309,30 @@ A server may advertise support for any subset of the three features. An applicat
 ## Datagram echo
 
 ```python
+import asyncio
+
 async def app(scope, receive, send):
     if scope["type"] != "webtransport":
         return
 
+    datagram_receive, datagram_send = scope["datagram_callables"]
     await send({"type": "webtransport.accept"})
 
-    while True:
-        event = await receive()
-
-        if event["type"] == "webtransport.datagram.received":
-            await send(
-                {
-                    "type": "webtransport.datagram.send",
-                    "data": event["data"],
-                }
+    async def echo_datagrams():
+        while True:
+            event = await datagram_receive()
+            await datagram_send(
+                {"type": "webtransport.datagram.send", "data": event["data"]}
             )
 
-        elif event["type"] == "webtransport.disconnect":
-            return
+    datagram_task = asyncio.create_task(echo_datagrams())
+    try:
+        while True:
+            event = await receive()
+            if event["type"] == "webtransport.disconnect":
+                return
+    finally:
+        datagram_task.cancel()
 ```
 
 ## Streams
@@ -1566,21 +1604,22 @@ A server that implements RCP 2.0 WebTransport must additionally:
 4. Create a separate WebTransport scope for each WebTransport session and provide lifespan state as a copy.
 5. Keep events, datagrams, streams, and state of each session independent from other sessions.
 6. Wait for `webtransport.accept` or `webtransport.reject` before completing or refusing the handshake.
-7. Continue delivering available events through `receive()` before acceptance; if the session closes while `receive()` is waiting, deliver `webtransport.disconnect`.
+7. Continue delivering available events through `receive()` and available datagrams through the datagram receive callable before acceptance; if the session closes while `receive()` is waiting, deliver `webtransport.disconnect`.
 8. Before acceptance, accept only `webtransport.accept` or `webtransport.reject` through `send()`. Raise an error for other events, a second accept, or any event sent after rejection.
 9. Permit stream readers to be used before acceptance, but reject stream writer use until acceptance. Apply the same lifecycle restrictions as `receive()` and `send()` while respecting each reader or writer's allowed event types.
-10. Deliver incoming datagrams through `webtransport.datagram.received`.
-11. Translate `webtransport.datagram.send` into WebTransport datagrams.
-12. Deliver client-initiated streams through `webtransport.unidirectional.client` and `webtransport.bidirectional.client`.
-13. Implement `Reader` and `Writer` for every WebTransport stream on top of its own stream handling.
-14. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return its `Writer` from `send`.
-15. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return its `(Writer, Reader)` from `send`.
-16. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
-17. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
-18. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
-19. Raise an exception if the application calls `send()` or `Writer.write()` after the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
-20. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
-21. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
+10. Provide `scope["datagram_callables"]` only when datagrams are supported. When `WEBTRANSPORT_EXTENSION` is used, include the tuple exactly when `features["datagrams"]` is `True`; if the feature is `False` or missing, omit it. Raise an error if the field and advertised feature disagree.
+11. Deliver available datagrams through the datagram receive callable whenever it is awaited, including before session acceptance. Return only `webtransport.datagram.received` from that callable.
+12. Accept only `webtransport.datagram.send` on the datagram send callable; raise an error if it is used before session acceptance.
+13. Deliver client-initiated streams through `webtransport.unidirectional.client` and `webtransport.bidirectional.client`.
+14. Implement `Reader` and `Writer` for every WebTransport stream on top of its own stream handling.
+15. Start a unidirectional stream when `webtransport.unidirectional.server` is sent and return its `Writer` from `send`.
+16. Start a bidirectional stream when `webtransport.bidirectional.server` is sent and return its `(Writer, Reader)` from `send`.
+17. Keep `is_closed` accurate for every reader and writer, and mark them closed when the client disconnects, the stream ends or is reset, or the session ends.
+18. Emit `WebTransportDataReceived` only from readers and accept `WebTransportDataSend` only on writers.
+19. Translate `webtransport.close` into session closure and deliver client-side termination through `webtransport.disconnect`.
+20. Raise an exception if the application calls `send()`, the datagram send callable, or `Writer.write()` after the client disconnects or the session closes; an `OSError` subclass is recommended but not required. Catch such exceptions without logging them as errors.
+21. Avoid arbitrary application-task cancellation as a normal session termination mechanism.
+22. Validate all WebTransport events sent by the application and reject events that are invalid for the session state.
 
 A non-RCP server that supports RCP WebTransport must additionally advertise `WEBTRANSPORT_EXTENSION` in the scope `extensions`.
 
