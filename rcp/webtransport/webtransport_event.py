@@ -100,6 +100,7 @@ class WebTransportCreateServerBidirectionalStream(TypedDict):
 
     type: Literal[WebTransportBidirectionalStreamEventType.SERVER]
 
+
 # WebTransport datagram events
 
 
@@ -118,7 +119,9 @@ class WebTransportDatagramSend(TypedDict):
     type: Literal[WebTransportDatagramEventType.SEND]
     data: bytes
 
+
 # WebTransport stream data events
+
 
 class WebTransportDataReceived(TypedDict):
     """Fires when data is received from the client on a stream.
@@ -142,7 +145,9 @@ class WebTransportDataSend(TypedDict):
     data: bytes
     sending_ended: NotRequired[bool]
 
+
 # WebTransport stream termination and direction-control events
+
 
 class WebTransportStreamDisconnected(TypedDict):
     """Fires when the stream has been terminated in both directions, or in its
@@ -174,6 +179,7 @@ class WebTransportStreamStopReceive(TypedDict):
 
     type: Literal[WebTransportStreamTerminationEventType.STOP_RECEIVE]
     error_code: NotRequired[int]
+
 
 class WebTransportStreamSendingStopped(TypedDict):
     """Fires when the client requested stopping on the application's sending side.

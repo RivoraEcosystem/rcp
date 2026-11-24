@@ -3,12 +3,11 @@ from collections.abc import Awaitable, Callable
 from .webtransport_event import (
     WebTransportDataReceived,
     WebTransportDataSend,
-    WebTransportStreamDisconnected,
     WebTransportStreamClose,
-    WebTransportStreamStopReceive,
+    WebTransportStreamDisconnected,
     WebTransportStreamSendingStopped,
+    WebTransportStreamStopReceive,
 )
-
 
 WebTransportStreamReceiveEvents = (
     WebTransportDataReceived

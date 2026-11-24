@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.0.8
+
+### Added
+
+- Added `WebTransportStreamTerminationEventType` values for stream stop-receive and sending-stopped events.
+- Added typed WebTransport stream events for `webtransport.stream.close`, `webtransport.stream.disconnect`, `webtransport.stream.stop_receive`, and `webtransport.stream.sending_stopped`, each with an `error_code` field.
+- Added `WebTransportStreamReceiveCallable` and `WebTransportStreamSendCallable` aliases with direction-specific stream event unions.
+
+### Changed
+
+- Replaced the WebTransport stream `Reader` and `Writer` interfaces with receiver and sender callables. Client-initiated stream events provide `(receiver, sender)` fields; sending a server-initiated stream event returns `(receiver, sender)` in that order.
+- Defined which stream events each callable may receive or send for client-initiated unidirectional, server-initiated unidirectional, and bidirectional streams.
+- Clarified that `receiving_ended` and `sending_ended` indicate FIN on the corresponding stream direction, and that stream `error_code` values are application error codes used for stream stop or reset operations. A value of `0` means no error.
+- Made stream `error_code` optional for close, stop-receive, disconnect, and sending-stopped events; an omitted code means no error (`0`).
+- Documented that applications must define their own mapping from application errors to WebTransport error codes; the server assumes `0` when no code is supplied.
+- Updated package metadata and the internal package version to `2.0.8`.
+- Clarified that stream receiver and sender callables follow the lifecycle of session `receive` and `send`: receivers deliver available events before acceptance, while senders reject use before acceptance and raise an `OSError` or subclass after client disconnect.
+- Clarified that unhandled stream errors can propagate through the `RCPApplication` task and may be mistaken for session errors, so applications should catch them at the stream handler boundary.
+- Documented datagram callable event and lifecycle rules: receive callables return only `webtransport.datagram.received` and remain usable before acceptance; send callables accept only `webtransport.datagram.send`, reject use before acceptance, and raise after client disconnect.
+- Updated WebTransport documentation and examples for stream and datagram callable behavior.
+
 ## 2.0.7
 
 ### Added

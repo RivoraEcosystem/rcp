@@ -71,6 +71,7 @@ class WebTransportDataEventType(StrEnum):
     RECEIVED = "webtransport.data.received"
     SEND = "webtransport.data.send"
 
+
 # WebTransport stream termination and direction-control events.
 class WebTransportStreamTerminationEventType(StrEnum):
     CLOSE = "webtransport.stream.close"

@@ -75,8 +75,7 @@ RCPReceiveCallable = Callable[[], Awaitable[RCPReceiveEvent]]
 RCPSendCallable = Callable[
     [RCPSendEvent],
     Awaitable[
-        None
-        | tuple[WebTransportStreamReceiveCallable, WebTransportStreamSendCallable]
+        None | tuple[WebTransportStreamReceiveCallable, WebTransportStreamSendCallable]
     ],
 ]
 

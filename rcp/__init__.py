@@ -71,10 +71,10 @@ from .webtransport.webtransport_event import (
     WebTransportSessionClose,
     WebTransportSessionDisconnect,
     WebTransportSessionReject,
+    WebTransportStreamClose,
     WebTransportStreamDisconnected,
     WebTransportStreamSendingStopped,
     WebTransportStreamStopReceive,
-    WebTransportStreamClose,
 )
 from .webtransport.webtransport_extension import WEBTRANSPORT_EXTENSION
 from .webtransport.webtransport_stream_utils import (
@@ -134,7 +134,6 @@ __all__ = [
     "WebTransportDataReceived",
     "WebTransportDataSend",
     "WebTransportDatagramEventType",
-    "WebTransportStreamTerminationEventType",
     "WebTransportDatagramReceiveCallable",
     "WebTransportDatagramReceiveEvents",
     "WebTransportDatagramReceived",
@@ -146,19 +145,20 @@ __all__ = [
     "WebTransportSessionClose",
     "WebTransportSessionDisconnect",
     "WebTransportSessionReject",
-    "WebTransportStreamDisconnected",
-    "WebTransportStreamSendingStopped",
-    "WebTransportStreamStopReceive",
     "WebTransportStreamClose",
+    "WebTransportStreamDisconnected",
     "WebTransportStreamReadEvent",
-    "WebTransportStreamWriteEvent",
-    "WebTransportUnidirectionalStreamEventType",
-    "WebtransportReceiveEvent",
-    "WebtransportSendEvent",
     "WebTransportStreamReceiveCallable",
     "WebTransportStreamReceiveEvents",
     "WebTransportStreamSendCallable",
     "WebTransportStreamSendEvents",
+    "WebTransportStreamSendingStopped",
+    "WebTransportStreamStopReceive",
+    "WebTransportStreamTerminationEventType",
+    "WebTransportStreamWriteEvent",
+    "WebTransportUnidirectionalStreamEventType",
+    "WebtransportReceiveEvent",
+    "WebtransportSendEvent",
 ]
 
-__version__ = "2.0.7"
+__version__ = "2.0.8"
