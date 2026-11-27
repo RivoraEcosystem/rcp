@@ -54,6 +54,8 @@ class HTTPScope(TypedDict):
 
 Available in **RCP 2.0 only**.
 
+RCP's WebTransport scope and interface are designed for WebTransport over HTTP/3. They are not suitable for WebTransport over HTTP/2.
+
 ```python
 class WebTransportScope(TypedDict):
     type: Literal[ScopeType.WEBTRANSPORT]
@@ -84,7 +86,7 @@ class WebTransportScope(TypedDict):
 | -------------- | --------------------------------------------------------------------------- |
 | `type`         | Always `ScopeType.WEBTRANSPORT` (`"webtransport"`).                         |
 | `rcp`          | RCP version information. The version must be `RCPVersions.VERSION_2`.       |
-| `http_version` | Always `HTTPVersions.HTTP3`. WebTransport is only defined over HTTP/3.      |
+| `http_version` | Always `HTTPVersions.HTTP3`. RCP's WebTransport interface supports HTTP/3 only. |
 | `method`       | The method of the session-establishing request (Extended `CONNECT`).        |
 | `scheme`       | Request scheme, such as `https`.                                            |
 | `authority`    | Value extracted from the HTTP/3 `:authority` pseudo-header.                 |

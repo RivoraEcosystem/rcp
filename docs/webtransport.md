@@ -15,7 +15,7 @@ WebTransport support is defined by **RCP version 2.0** and must only be used wit
 * WebTransport events, streams, receivers, and senders must not be used in RCP 1.0 applications.
 * RCP 2.0 includes everything defined by RCP 1.0.
 
-WebTransport runs over HTTP/3. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header uses the token defined by the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to that draft version for the correct token; RCP's WebTransport interface is not tied to a specific draft version. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
+RCP's WebTransport interface is designed for WebTransport over HTTP/3. It is not suitable for WebTransport over HTTP/2. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header uses the token defined by the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to that draft version for the correct token; RCP's WebTransport interface is not tied to a specific draft version. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
 
 A WebTransport session provides:
 
