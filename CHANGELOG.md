@@ -1,5 +1,12 @@
 # Changelog
 
+## Current changes
+
+### Changed
+
+- Added a WebTransport callable layout documenting the stream and datagram receive/send callable signatures and their event types.
+- Clarified that the WebTransport `:protocol` token depends on the draft version implemented (for example, `webtransport` or `webtransport-h3`), since the RCP WebTransport interface is not tied to a specific draft version.
+
 ## 2.0.8
 
 ### Added
@@ -20,8 +27,6 @@
 - Clarified that unhandled stream errors can propagate through the `RCPApplication` task and may be mistaken for session errors, so applications should catch them at the stream handler boundary.
 - Documented datagram callable event and lifecycle rules: receive callables return only `webtransport.datagram.received` and remain usable before acceptance; send callables accept only `webtransport.datagram.send`, reject use before acceptance, and raise after client disconnect.
 - Updated WebTransport documentation and examples for stream and datagram callable behavior.
-- Added a WebTransport callable layout documenting the stream and datagram receive/send callable signatures and their event types.
-- Clarified that the WebTransport `:protocol` token depends on the draft version implemented (for example, `webtransport` or `webtransport-h3`), since the RCP WebTransport interface is not tied to a specific draft version.
 
 ## 2.0.7
 
