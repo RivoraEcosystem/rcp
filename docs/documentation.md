@@ -1071,6 +1071,48 @@ Each stream has its own receiver and sender. Closing or resetting a stream does 
 
 The receiver follows the lifecycle rules of the session `receive` callable, and the sender follows the lifecycle rules of the session `send` callable. Receivers must deliver available events when called before the session is accepted. Calling a sender before acceptance must raise an error. After client disconnect, calling a sender must raise an exception; an `OSError` subclass is recommended. Applications should catch these exceptions, and servers should not log them as errors.
 
+## Callable layout
+
+WebTransport exposes separate callable pairs for stream data and datagrams. Receive callables take no arguments and return one event. Send callables take one event and return `None`.
+
+```python
+WebTransportStreamReceiveCallable = Callable[
+    [], Awaitable[WebTransportStreamReceiveEvents]
+]
+WebTransportStreamSendCallable = Callable[
+    [WebTransportStreamSendEvents], Awaitable[None]
+]
+
+WebTransportDatagramReceiveCallable = Callable[
+    [], Awaitable[WebTransportDatagramReceiveEvents]
+]
+WebTransportDatagramSendCallable = Callable[
+    [WebTransportDatagramSendEvents], Awaitable[None]
+]
+```
+
+| Callable | Arguments | Event returned or accepted |
+| --- | --- | --- |
+| Stream receiver | None | Returns `WebTransportDataReceived`, `WebTransportStreamDisconnected`, or `WebTransportStreamSendingStopped` |
+| Stream sender | One stream event | Accepts `WebTransportDataSend`, `WebTransportStreamClose`, or `WebTransportStreamStopReceive` |
+| Datagram receiver | None | Returns `WebTransportDatagramReceived` |
+| Datagram sender | One datagram event | Accepts `WebTransportDatagramSend` |
+
+The corresponding event `type` values are:
+
+| Callable direction | Event | `type` |
+| --- | --- | --- |
+| Stream receiver → application | `WebTransportDataReceived` | `webtransport.data.received` |
+| Stream receiver → application | `WebTransportStreamDisconnected` | `webtransport.stream.disconnect` |
+| Stream receiver → application | `WebTransportStreamSendingStopped` | `webtransport.stream.sending_stopped` |
+| Application → stream sender | `WebTransportDataSend` | `webtransport.data.send` |
+| Application → stream sender | `WebTransportStreamClose` | `webtransport.stream.close` |
+| Application → stream sender | `WebTransportStreamStopReceive` | `webtransport.stream.stop_receive` |
+| Datagram receiver → application | `WebTransportDatagramReceived` | `webtransport.datagram.received` |
+| Application → datagram sender | `WebTransportDatagramSend` | `webtransport.datagram.send` |
+
+The stream sender's allowed events depend on the stream's available directions; see [Events allowed for each stream direction](#events-allowed-for-each-stream-direction). Datagram callables accept and return only their respective datagram event types.
+
 ## `WebTransportDataReceived`
 
 Returned by the stream receiver when data arrives on the application's receiving direction.
