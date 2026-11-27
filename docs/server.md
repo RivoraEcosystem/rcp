@@ -32,7 +32,7 @@ An RCP server must:
 A server that implements RCP 2.0 WebTransport must additionally:
 
 1. Only create `webtransport` scopes when operating as RCP version 2.0.
-2. Recognize HTTP/3 Extended CONNECT requests with `:protocol` set to `webtransport`, and process `:protocol` using the HTTP/3 extension rules.
+2. Recognize HTTP/3 Extended CONNECT requests with the `:protocol` token defined by the implemented WebTransport draft version (for example, `webtransport` or `webtransport-h3`), and process `:protocol` using the HTTP/3 extension rules. The RCP WebTransport interface is not tied to a specific draft version; implementations must consult their draft version for the token.
 3. Keep `:protocol` out of `scope["headers"]`.
 4. Create a separate WebTransport scope for each WebTransport session and provide lifespan state as a copy.
 5. Keep events, datagrams, streams, and state of each session independent from other sessions.

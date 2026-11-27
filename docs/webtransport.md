@@ -15,7 +15,7 @@ WebTransport support is defined by **RCP version 2.0** and must only be used wit
 * WebTransport events, streams, receivers, and senders must not be used in RCP 1.0 applications.
 * RCP 2.0 includes everything defined by RCP 1.0.
 
-WebTransport runs over HTTP/3. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header is `webtransport`. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
+RCP's WebTransport interface is designed for WebTransport over HTTP/3. It is not suitable for WebTransport over HTTP/2. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header uses the token defined by the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to that draft version for the correct token; RCP's WebTransport interface is not tied to a specific draft version. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
 
 A WebTransport session provides:
 
@@ -338,6 +338,48 @@ Each stream has its own receiver and sender. Closing or resetting a stream does 
 `WebTransportStreamReceiveCallable` takes no arguments and returns one event from `WebTransportStreamReceiveEvents`. `WebTransportStreamSendCallable` accepts one event from `WebTransportStreamSendEvents` and returns `None`.
 
 The receiver follows the lifecycle rules of the session `receive` callable, and the sender follows the lifecycle rules of the session `send` callable. Receivers must deliver available events when called before the session is accepted. Calling a sender before acceptance must raise an error. After client disconnect, calling a sender must raise an exception; an `OSError` subclass is recommended. Applications should catch these exceptions, and servers should not log them as errors.
+
+## Callable layout
+
+WebTransport exposes separate callable pairs for stream data and datagrams. Receive callables take no arguments and return one event. Send callables take one event and return `None`.
+
+```python
+WebTransportStreamReceiveCallable = Callable[
+    [], Awaitable[WebTransportStreamReceiveEvents]
+]
+WebTransportStreamSendCallable = Callable[
+    [WebTransportStreamSendEvents], Awaitable[None]
+]
+
+WebTransportDatagramReceiveCallable = Callable[
+    [], Awaitable[WebTransportDatagramReceiveEvents]
+]
+WebTransportDatagramSendCallable = Callable[
+    [WebTransportDatagramSendEvents], Awaitable[None]
+]
+```
+
+| Callable | Arguments | Event returned or accepted |
+| --- | --- | --- |
+| Stream receiver | None | Returns `WebTransportDataReceived`, `WebTransportStreamDisconnected`, or `WebTransportStreamSendingStopped` |
+| Stream sender | One stream event | Accepts `WebTransportDataSend`, `WebTransportStreamClose`, or `WebTransportStreamStopReceive` |
+| Datagram receiver | None | Returns `WebTransportDatagramReceived` |
+| Datagram sender | One datagram event | Accepts `WebTransportDatagramSend` |
+
+The corresponding event `type` values are:
+
+| Callable direction | Event | `type` |
+| --- | --- | --- |
+| Stream receiver → application | `WebTransportDataReceived` | `webtransport.data.received` |
+| Stream receiver → application | `WebTransportStreamDisconnected` | `webtransport.stream.disconnect` |
+| Stream receiver → application | `WebTransportStreamSendingStopped` | `webtransport.stream.sending_stopped` |
+| Application → stream sender | `WebTransportDataSend` | `webtransport.data.send` |
+| Application → stream sender | `WebTransportStreamClose` | `webtransport.stream.close` |
+| Application → stream sender | `WebTransportStreamStopReceive` | `webtransport.stream.stop_receive` |
+| Datagram receiver → application | `WebTransportDatagramReceived` | `webtransport.datagram.received` |
+| Application → datagram sender | `WebTransportDatagramSend` | `webtransport.datagram.send` |
+
+The stream sender's allowed events depend on the stream's available directions; see [Events allowed for each stream direction](#events-allowed-for-each-stream-direction). Datagram callables accept and return only their respective datagram event types.
 
 
 ### `WebTransportDataReceived`

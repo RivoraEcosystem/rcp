@@ -151,5 +151,5 @@ RCP separates HTTP/3 pseudo-headers from ordinary HTTP fields.
 | `:authority` | `scope["authority"]`                                                                       |
 | `:path`      | `scope["path"]` and `scope["query_string"]`                                                |
 | `:status`    | `HTTPResponseStartEvent["status"]`                                                         |
-| `:protocol`  | Processed as an HTTP/3 extension/extended CONNECT field. `webtransport` selects the WebTransport scope (RCP 2.0). |
+| `:protocol`  | Processed as an HTTP/3 extension/extended CONNECT field. The WebTransport draft's token (for example, `webtransport` or `webtransport-h3`) selects the WebTransport scope (RCP 2.0); implementations must consult their draft version for the token. |
 

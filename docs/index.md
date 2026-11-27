@@ -64,7 +64,7 @@ Client
    ↓
 Server
    ↓
-Receive HTTP/3 Extended CONNECT request (:protocol = webtransport)
+Receive HTTP/3 Extended CONNECT request (:protocol = webtransport or webtransport-h3)
    ↓
 Validate HTTP/3 fields and pseudo-headers
    ↓
