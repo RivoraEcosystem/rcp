@@ -98,7 +98,7 @@ class WebTransportScope(TypedDict):
 | `state`        | Session/application state (a copy of the lifespan state).                   |
 | `extensions`   | Optional protocol extensions.                                               |
 
-The `:protocol` pseudo-header of the Extended CONNECT request (`webtransport`) is consumed by the server to select the WebTransport scope and must not appear in `scope["headers"]`.
+The `:protocol` pseudo-header of the Extended CONNECT request is consumed by the server to select the WebTransport scope and must not appear in `scope["headers"]`. Its token value depends on the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to their chosen draft version for the correct token. RCP's WebTransport interface is not tied to a specific WebTransport draft version.
 
 ---
 

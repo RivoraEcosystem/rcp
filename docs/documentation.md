@@ -64,7 +64,7 @@ Client
    ↓
 Server
    ↓
-Receive HTTP/3 Extended CONNECT request (:protocol = webtransport)
+Receive HTTP/3 Extended CONNECT request (:protocol = webtransport or webtransport-h3)
    ↓
 Validate HTTP/3 fields and pseudo-headers
    ↓
@@ -344,7 +344,7 @@ class WebTransportScope(TypedDict):
 | `extensions`   | Optional protocol extensions.                                               |
 | `datagram_callables` | Optional tuple of datagram receive and send callables, present only when datagrams are supported. |
 
-The `:protocol` pseudo-header of the Extended CONNECT request (`webtransport`) is consumed by the server to select the WebTransport scope and must not appear in `scope["headers"]`.
+The `:protocol` pseudo-header of the Extended CONNECT request is consumed by the server to select the WebTransport scope and must not appear in `scope["headers"]`. Its token value depends on the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to their chosen draft version for the correct token. RCP's WebTransport interface is not tied to a specific WebTransport draft version.
 
 ---
 
@@ -747,7 +747,7 @@ WebTransport support is defined by **RCP version 2.0** and must only be used wit
 * WebTransport events, streams, receivers, and senders must not be used in RCP 1.0 applications.
 * RCP 2.0 includes everything defined by RCP 1.0.
 
-WebTransport runs over HTTP/3. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header is `webtransport`. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
+WebTransport runs over HTTP/3. The session is established with an HTTP/3 Extended CONNECT request whose `:protocol` pseudo-header uses the token defined by the WebTransport draft version implemented by the server (for example, `webtransport` or `webtransport-h3`). Implementations must refer to that draft version for the correct token; RCP's WebTransport interface is not tied to a specific draft version. The server processes `:protocol` using `H3_EXTENSION_PSEUDO_HEADERS`.
 
 A WebTransport session provides:
 
@@ -1637,7 +1637,7 @@ An RCP server must:
 A server that implements RCP 2.0 WebTransport must additionally:
 
 1. Only create `webtransport` scopes when operating as RCP version 2.0.
-2. Recognize HTTP/3 Extended CONNECT requests with `:protocol` set to `webtransport`, and process `:protocol` using the HTTP/3 extension rules.
+2. Recognize HTTP/3 Extended CONNECT requests with the `:protocol` token defined by the implemented WebTransport draft version (for example, `webtransport` or `webtransport-h3`), and process `:protocol` using the HTTP/3 extension rules. The RCP WebTransport interface is not tied to a specific draft version; implementations must consult their draft version for the token.
 3. Keep `:protocol` out of `scope["headers"]`.
 4. Create a separate WebTransport scope for each WebTransport session and provide lifespan state as a copy.
 5. Keep events, datagrams, streams, and state of each session independent from other sessions.
@@ -1704,7 +1704,7 @@ RCP separates HTTP/3 pseudo-headers from ordinary HTTP fields.
 | `:authority` | `scope["authority"]`                                                                       |
 | `:path`      | `scope["path"]` and `scope["query_string"]`                                                |
 | `:status`    | `HTTPResponseStartEvent["status"]`                                                         |
-| `:protocol`  | Processed as an HTTP/3 extension/extended CONNECT field. `webtransport` selects the WebTransport scope (RCP 2.0). |
+| `:protocol`  | Processed as an HTTP/3 extension/extended CONNECT field. The WebTransport draft's token (for example, `webtransport` or `webtransport-h3`) selects the WebTransport scope (RCP 2.0); implementations must consult their draft version for the token. |
 
 ---
 
